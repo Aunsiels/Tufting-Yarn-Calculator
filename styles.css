@@ -380,3 +380,41 @@ button {
   background: rgba(37,99,235,.08);
 }
 
+#preview-container {
+  position: relative; /* needed for absolute positioning inside */
+}
+
+#preview-readout {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  background: rgba(17, 17, 17, 0.96);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.3;
+  padding: 6px 8px;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .12s ease, transform .12s ease;
+  max-width: 260px;
+}
+
+#preview-readout[data-show="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#preview-readout .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#preview-readout .sw {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+

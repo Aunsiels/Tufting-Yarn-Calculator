@@ -59,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const overlayDimEl  = document.getElementById("overlay-dim");
   const analysisResEl = document.getElementById("analysis-resolution");
   const legendEl      = document.getElementById("legend");
+  const previewReadout = document.getElementById("preview-readout");
 
 
 
@@ -78,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let baseImageData = null;      // ImageData of the clean image in preview canvas
   let analysisLabels = null;     // Int16Array of length w*h, mapping to kept cluster index or -1
   let analysisSize = { width: 0, height: 0 }; // should match previewCanvas
+  let hoverClusterIdx = -1;
 
 
   /* --------------------------- UI Mode handling --------------------------- */
@@ -407,6 +409,106 @@ document.addEventListener("DOMContentLoaded", () => {
       row?.scrollIntoView({ block: "nearest" });
     } catch {}
   });
+
+  // --- Hover readout over the preview canvas ---
+  previewCanvas.addEventListener("mouseleave", () => {
+    hidePreviewReadout();
+    // reset hover highlight
+    if (hoverClusterIdx !== -1) {
+      hoverClusterIdx = -1;
+      drawOverlay();
+    }
+  });
+
+  previewCanvas.addEventListener("mousemove", (e) => {
+    const rect = previewCanvas.getBoundingClientRect();
+    const scaleX = previewCanvas.width / rect.width;
+    const scaleY = previewCanvas.height / rect.height;
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+    if (x < 0 || y < 0 || x >= previewCanvas.width || y >= previewCanvas.height) {
+      hidePreviewReadout();
+      if (hoverClusterIdx !== -1) { hoverClusterIdx = -1; drawOverlay(); }
+      return;
+    }
+
+    // If analyzed, detect hovered cluster for highlight
+    let hovered = -1;
+    if (analysisLabels && lastPerColor?.length) {
+      const idx = y * previewCanvas.width + x;
+      const cl = analysisLabels[idx]; // -1 if transparent
+      if (cl >= 0 && cl < lastPerColor.length) hovered = cl;
+    }
+
+    // Update hover highlight only if it changed
+    if (hovered !== hoverClusterIdx) {
+      hoverClusterIdx = hovered;
+      drawOverlay();
+    }
+
+    // (existing readout logic continues below…)
+    if (analysisLabels && lastPerColor?.length && hoverClusterIdx >= 0) {
+      const c = lastPerColor[hoverClusterIdx];
+      const name = colorNames.get(c.hex) || "";
+      const pct = c.percentValid.toFixed(2) + "%";
+      const content = `
+        <div class="row">
+          <span class="sw" style="background:${c.hex}"></span>
+          <span><strong>${c.hex.toUpperCase()}</strong>${name ? ` <em>(${escapeHtml(name)})</em>` : ""}</span>
+        </div>
+        <div>${pct} of valid pixels</div>
+      `;
+      showPreviewReadoutAt(e.clientX, e.clientY, content);
+      return;
+    }
+
+    // Fallback readout…
+    try {
+      const ctx = previewCanvas.getContext("2d", { willReadFrequently: true });
+      const px = ctx.getImageData(x, y, 1, 1).data;
+      if (px[3] === 0) { hidePreviewReadout(); return; }
+      const hex = '#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+      const content = `
+        <div class="row">
+          <span class="sw" style="background:${hex}"></span>
+          <span><strong>${hex.toUpperCase()}</strong></span>
+        </div>
+        <div>Unanalyzed pixel</div>
+      `;
+      showPreviewReadoutAt(e.clientX, e.clientY, content);
+    } catch {
+      hidePreviewReadout();
+    }
+  });
+
+
+  function showPreviewReadoutAt(clientX, clientY, html) {
+    previewReadout.innerHTML = html;
+    previewReadout.setAttribute("data-show", "true");
+
+    // Position relative to preview container, clamped inside it
+    const contRect = document.getElementById("preview-container").getBoundingClientRect();
+    const rd = previewReadout.getBoundingClientRect();
+    const gap = 10;
+
+    let left = clientX - contRect.left + gap;
+    let top  = clientY - contRect.top  + gap;
+
+    // Clamp so it stays visible in the container
+    if (left + rd.width > contRect.width - 6) left = contRect.width - rd.width - 6;
+    if (top + rd.height > contRect.height - 6) top = contRect.height - rd.height - 6;
+    if (left < 6) left = 6;
+    if (top < 6) top = 6;
+
+    previewReadout.style.left = `${Math.round(left)}px`;
+    previewReadout.style.top  = `${Math.round(top)}px`;
+  }
+
+  function hidePreviewReadout() {
+    previewReadout?.setAttribute("data-show", "false");
+  }
+
 
 
     // --- Yarn helper: Label length/weight -> g/m & m/kg ---
@@ -899,45 +1001,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function drawOverlay() {
     if (!baseImageData) return;
+
     const mode = overlayModeEl.value; // none | highlight | isolate | hide
     const dimPct = Math.max(0, Math.min(95, Number(overlayDimEl.value || 70)));
     const dimFactor = 1 - dimPct / 100;
 
     const ctx = previewCanvas.getContext("2d");
-    // start from clean image
+    // Start from clean image
     ctx.putImageData(baseImageData, 0, 0);
-    if (mode === "none" || !analysisLabels || selectedColorIdxs.size === 0) return;
 
-    // mutate a copy
+    // If we have a selection and a mode != none, keep existing behavior
+    const hasSelection = selectedColorIdxs.size > 0;
+    const canHoverHighlight = (!hasSelection && mode === "none" && analysisLabels && hoverClusterIdx >= 0);
+
+    if (!analysisLabels) return;
+
+    if (!hasSelection && mode === "none" && !canHoverHighlight) {
+      // no selection, no overlay, nothing to do
+      return;
+    }
+
     const img = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
     const data = img.data;
     const labels = analysisLabels;
-    const selected = new Set(selectedColorIdxs);
 
-    // Safety if analysis resolution != current canvas (shouldn't happen after restore)
+    // Safety
     if (labels.length !== (img.width * img.height)) {
-      // fallback: do nothing to avoid artifacts
       ctx.putImageData(img, 0, 0);
       return;
     }
 
+    // Hover-only dim factor (softer than the main dim)
+    const hoverDimFactor = 0.5; // 50% brightness for non-hovered pixels
+
+    // Fast membership check
+    const selected = hasSelection ? new Set(selectedColorIdxs) : null;
+
     for (let i = 0, p = 0; i < labels.length; i++, p += 4) {
-      const lab = labels[i]; // -1 means transparent/ignored
-      const isSel = lab >= 0 && selected.has(lab);
+      const lab = labels[i]; // -1 transparent/ignored
+      if (lab < 0) continue;
+
+      if (canHoverHighlight) {
+        // Dim everything except the hovered cluster
+        if (lab !== hoverClusterIdx) {
+          data[p]   = Math.round(data[p]   * hoverDimFactor);
+          data[p+1] = Math.round(data[p+1] * hoverDimFactor);
+          data[p+2] = Math.round(data[p+2] * hoverDimFactor);
+        }
+        continue;
+      }
+
+      // Existing overlay behaviors when there is a selection or mode != none
+      if (!hasSelection) continue;
+
+      const isSel = selected.has(lab);
 
       if (mode === "highlight") {
         if (!isSel) {
-          // dim non-selected
-          data[p] = Math.round(data[p] * dimFactor);
-          data[p + 1] = Math.round(data[p + 1] * dimFactor);
-          data[p + 2] = Math.round(data[p + 2] * dimFactor);
+          data[p]   = Math.round(data[p]   * dimFactor);
+          data[p+1] = Math.round(data[p+1] * dimFactor);
+          data[p+2] = Math.round(data[p+2] * dimFactor);
         }
       } else if (mode === "isolate") {
-        if (!isSel) data[p + 3] = Math.round(data[p + 3] * dimFactor); // fade alpha
+        if (!isSel) {
+          data[p + 3] = Math.round(data[p + 3] * dimFactor); // fade alpha
+        }
       } else if (mode === "hide") {
-        if (isSel) data[p + 3] = 0; // make selected invisible
+        if (isSel) {
+          data[p + 3] = 0; // hide selected
+        }
       }
     }
+
     ctx.putImageData(img, 0, 0);
   }
 
