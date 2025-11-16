@@ -45,6 +45,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const presetSelectEl = document.getElementById("preset-select");
   const deletePresetBtn = document.getElementById("delete-preset-button");
 
+  // Yarn helper elements
+  const yhLenM = document.getElementById("yh-length-m");
+  const yhWtG  = document.getElementById("yh-weight-g");
+  const yhM100 = document.getElementById("yh-m-per-100g");
+  const yhTex  = document.getElementById("yh-tex");
+  const btnApplyLenWt = document.getElementById("yh-apply-len-wt");
+  const btnApplyM100  = document.getElementById("yh-apply-m100");
+  const btnApplyTex   = document.getElementById("yh-apply-tex");
+
+  // Preview controls
+  const overlayModeEl = document.getElementById("overlay-mode");
+  const overlayDimEl  = document.getElementById("overlay-dim");
+  const analysisResEl = document.getElementById("analysis-resolution");
+  const legendEl      = document.getElementById("legend");
+
+
+
   let appState = {
     mode: "beginner",
     imageLoaded: false,
@@ -56,6 +73,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedColorIdxs = new Set();
   // Optional user-given names for colors (persist only for this session)
   let colorNames = new Map(); // key: hex string, value: name
+
+
+  let baseImageData = null;      // ImageData of the clean image in preview canvas
+  let analysisLabels = null;     // Int16Array of length w*h, mapping to kept cluster index or -1
+  let analysisSize = { width: 0, height: 0 }; // should match previewCanvas
+
 
   /* --------------------------- UI Mode handling --------------------------- */
   function setMode(mode) {
@@ -93,6 +116,10 @@ document.addEventListener("DOMContentLoaded", () => {
         previewCanvas.height = height;
         ctx.clearRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
+	
+        baseImageData = ctx.getImageData(0, 0, width, height);
+        analysisLabels = null; // reset labels until next analysis
+        analysisSize = { width, height };
 
         previewCanvas.style.display = "block";
         previewPlaceholder.style.display = "none";
@@ -123,6 +150,129 @@ document.addEventListener("DOMContentLoaded", () => {
     rememberEl
   ].forEach(el => el && el.addEventListener("input", maybeAutosave));
 
+
+  /* ---------------------- Viewport-safe tooltip layer --------------------- */
+  const TOOLTIP_MARGIN = 8;
+  const TIP_GAP = 10; // distance from the trigger element
+  let tooltipEl;
+
+  initTooltipLayer();
+  bindTipEvents();
+
+  function initTooltipLayer() {
+    tooltipEl = document.createElement('div');
+    tooltipEl.className = 'tooltip-layer';
+    tooltipEl.setAttribute('role', 'tooltip');
+    const arrow = document.createElement('div');
+    arrow.className = 'arrow';
+    tooltipEl.appendChild(arrow);
+    document.body.appendChild(tooltipEl);
+
+    // Hide on window changes
+    window.addEventListener('scroll', hideTooltip, { passive: true });
+    window.addEventListener('resize', hideTooltip);
+  }
+
+  function bindTipEvents() {
+    // Delegate to whole document to catch dynamically added tips
+    document.addEventListener('mouseenter', tipEnter, true);
+    document.addEventListener('mouseleave', tipLeave, true);
+    document.addEventListener('focusin', tipEnter, true);
+    document.addEventListener('focusout', tipLeave, true);
+  }
+
+  let tipHideTimer = null;
+
+  function tipEnter(e) {
+    const el = e.target.closest('.tip[data-tip]');
+    if (!el) return;
+    clearTimeout(tipHideTimer);
+    showTooltip(el);
+  }
+
+  function tipLeave(e) {
+    const el = e.target.closest('.tip[data-tip]');
+    if (!el) return;
+    // small delay makes it feel smoother when moving the mouse
+    tipHideTimer = setTimeout(hideTooltip, 80);
+  }
+
+  function showTooltip(trigger) {
+    const text = trigger.getAttribute('data-tip');
+    if (!text) return;
+
+    tooltipEl.textContent = ''; // reset
+    // rebuild content so we keep the arrow element
+    const arrow = document.createElement('div');
+    arrow.className = 'arrow';
+    tooltipEl.append(text);
+    tooltipEl.appendChild(arrow);
+
+    // Measure trigger
+    const r = trigger.getBoundingClientRect();
+
+    // Prefer placing on top; if not enough space, place bottom
+    const tooltipWidth = Math.min(340, Math.floor(window.innerWidth * 0.92));
+    tooltipEl.style.maxWidth = tooltipWidth + 'px';
+    tooltipEl.style.left = '0px'; // reset to measure
+    tooltipEl.style.top = '-9999px';
+    tooltipEl.setAttribute('data-show', 'true'); // set visible to get size
+    tooltipEl.setAttribute('data-placement', 'top');
+
+    // Let it render to measure size
+    requestAnimationFrame(() => {
+      const rect = tooltipEl.getBoundingClientRect();
+      const arrowRect = 10; // square size
+
+      // Horizontal center on trigger, then clamp within viewport
+      const desiredLeft = r.left + r.width / 2 - rect.width / 2;
+      const clampedLeft = Math.max(
+        TOOLTIP_MARGIN,
+        Math.min(desiredLeft, window.innerWidth - rect.width - TOOLTIP_MARGIN)
+      );
+
+      // Compute top/bottom placement
+      const spaceAbove = r.top;
+      const spaceBelow = window.innerHeight - r.bottom;
+
+      let top, placement;
+      if (spaceAbove >= rect.height + TIP_GAP + TOOLTIP_MARGIN) {
+        // place above
+        top = r.top - rect.height - TIP_GAP;
+        placement = 'top';
+      } else if (spaceBelow >= rect.height + TIP_GAP + TOOLTIP_MARGIN) {
+        // place below
+        top = r.bottom + TIP_GAP;
+        placement = 'bottom';
+      } else {
+        // not enough space either side; choose side with more room and clamp
+        if (spaceAbove > spaceBelow) {
+          top = Math.max(TOOLTIP_MARGIN, r.top - rect.height - TIP_GAP);
+          placement = 'top';
+        } else {
+          top = Math.min(window.innerHeight - rect.height - TOOLTIP_MARGIN, r.bottom + TIP_GAP);
+          placement = 'bottom';
+        }
+      }
+
+      tooltipEl.style.left = `${Math.round(clampedLeft)}px`;
+      tooltipEl.style.top = `${Math.round(top)}px`;
+      tooltipEl.setAttribute('data-placement', placement);
+
+      // Position arrow centered over trigger (but keep arrow inside tooltip)
+      const arrowEl = tooltipEl.querySelector('.arrow');
+      const arrowLeft = (r.left + r.width / 2) - clampedLeft - arrowRect / 2;
+      const arrowLeftClamped = Math.max(6, Math.min(arrowLeft, rect.width - 6 - arrowRect));
+      arrowEl.style.left = `${Math.round(arrowLeftClamped)}px`;
+    });
+  }
+
+  function hideTooltip() {
+    tooltipEl?.setAttribute('data-show', 'false');
+  }
+
+
+
   /* ----------------------------- Analyze click --------------------------- */
   analyzeButton.addEventListener("click", () => {
     if (!appState.imageLoaded) return;
@@ -136,14 +286,46 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Optionally re-draw image at a specific resolution for analysis
+    const ctx = previewCanvas.getContext("2d");
+    let restoreAfter = null;
+    const chosen = analysisResEl.value;
+    if (chosen !== "auto") {
+      const factor = Number(chosen);
+      if (Number.isFinite(factor) && factor > 0 && factor <= 1) {
+        // Save current preview
+        const saved = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+        restoreAfter = saved;
+
+        const newW = Math.max(1, Math.round(appState.imageNatural.w * Math.min(600 / appState.imageNatural.w, 1) * factor));
+        const newH = Math.max(1, Math.round(appState.imageNatural.h * Math.min(400 / appState.imageNatural.h, 1) * factor));
+        const imgBitmap = createImageBitmap(dataURLToBlob(imageInput.files[0]));
+        previewCanvas.width = newW;
+        previewCanvas.height = newH;
+        ctx.clearRect(0, 0, newW, newH);
+        ctx.drawImage(imgBitmap, 0, 0, newW, newH);
+        baseImageData = ctx.getImageData(0, 0, newW, newH);
+        analysisSize = { width: newW, height: newH };
+      }
+    }
+
+    // Helper converts file dataURL to Blob
+    function dataURLToBlob(file) { return file; }
+
+
     // 1) Color analysis
-    const { clusters, dropped, totals } = analyzeImage(previewCanvas, {
+    const result = analyzeImage(previewCanvas, {
       alphaThreshold: params.alphaThreshold,
       tolerance: params.tolerance,
       minAreaPercent: params.minAreaPercent,
       rugWidthCm: params.rugWidthCm,
       rugHeightCm: params.rugHeightCm,
     });
+
+    const { clusters, dropped, totals, labels, size } = result;
+    analysisLabels = labels;
+    analysisSize = size;
+
 
     // 2) Yarn constants
     const constants = computeYarnConstants({
@@ -168,7 +350,123 @@ document.addEventListener("DOMContentLoaded", () => {
     // 4) Render
     renderSummary(resultsSummary, { clusters, totals, dropped, constants, yarn });
     renderYarnTable(resultsColors, yarn.perColor);
+
+    if (restoreAfter) {
+      // restore canvas size back to saved dimensions
+      const oldW = restoreAfter.width, oldH = restoreAfter.height;
+      previewCanvas.width = oldW;
+      previewCanvas.height = oldH;
+      const rctx = previewCanvas.getContext("2d");
+      rctx.putImageData(restoreAfter, 0, 0);
+      baseImageData = rctx.getImageData(0, 0, oldW, oldH);
+      analysisSize = { width: oldW, height: oldH };
+    }
+
+    renderLegend(legendEl, lastPerColor);
+    drawOverlay(); // respect current overlay mode
+
+
   });
+
+	  // Click inside the preview to select the color under the cursor
+  previewCanvas.addEventListener("click", (e) => {
+    if (!analysisLabels || !baseImageData) return;
+
+    const rect = previewCanvas.getBoundingClientRect();
+    const scaleX = previewCanvas.width / rect.width;
+    const scaleY = previewCanvas.height / rect.height;
+
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+    if (x < 0 || y < 0 || x >= previewCanvas.width || y >= previewCanvas.height) return;
+
+    const idx = y * previewCanvas.width + x;
+    const cluster = analysisLabels[idx]; // -1 if transparent/unassigned
+    if (cluster < 0) return;
+
+    // Toggle or single-select depending on Ctrl/Cmd
+    const multi = e.ctrlKey || e.metaKey;
+    if (!multi) {
+      selectedColorIdxs.clear();
+      selectedColorIdxs.add(cluster);
+    } else {
+      if (selectedColorIdxs.has(cluster)) selectedColorIdxs.delete(cluster);
+      else selectedColorIdxs.add(cluster);
+    }
+
+    // Re-render legend & table to reflect selection; update overlay
+    renderLegend(legendEl, lastPerColor);
+    const containerTbl = document.getElementById("results-colors");
+    renderYarnTable(containerTbl, lastPerColor);
+    drawOverlay();
+
+    // Optional: scroll the selected row into view
+    try {
+      const row = containerTbl.querySelector(`tr[data-row="${cluster}"]`);
+      row?.scrollIntoView({ block: "nearest" });
+    } catch {}
+  });
+
+
+    // --- Yarn helper: Label length/weight -> g/m & m/kg ---
+  btnApplyLenWt.addEventListener("click", () => {
+    const Lm = Number(yhLenM.value);
+    const Wg = Number(yhWtG.value);
+    if (!isFinite(Lm) || !isFinite(Wg) || Lm <= 0 || Wg <= 0) {
+      alert("Please enter positive values for label length (m) and weight (g).");
+      return;
+    }
+    // g/m = grams / meters
+    const gpm = Wg / Lm;
+    // m/kg = meters per 1000 g
+    const mpkg = (Lm / Wg) * 1000;
+
+    yarnGPerMEl.value = toFixedNice(gpm, 4);
+    yarnMPerKgEl.value = toFixedNice(mpkg, 0);
+    maybeAutosave();
+  });
+
+  // --- Yarn helper: m per 100 g -> g/m & m/kg ---
+  btnApplyM100.addEventListener("click", () => {
+    const m100 = Number(yhM100.value);
+    if (!isFinite(m100) || m100 <= 0) {
+      alert("Enter a positive value for m per 100 g.");
+      return;
+    }
+    // m per 100 g -> m/kg = m100 * 10
+    const mpkg = m100 * 10;
+    // g/m = 1000 / m/kg
+    const gpm = 1000 / mpkg;
+
+    yarnGPerMEl.value = toFixedNice(gpm, 4);
+    yarnMPerKgEl.value = toFixedNice(mpkg, 0);
+    maybeAutosave();
+  });
+
+  // --- Yarn helper: Tex (g per 1000 m) -> g/m & m/kg ---
+  btnApplyTex.addEventListener("click", () => {
+    const tex = Number(yhTex.value);
+    if (!isFinite(tex) || tex <= 0) {
+      alert("Enter a positive Tex (grams per 1000 meters).");
+      return;
+    }
+    // Tex = g / 1000 m  -> g/m = tex / 1000
+    const gpm = tex / 1000;
+    // m/kg = 1000 / g/m
+    const mpkg = 1000 / gpm;
+
+    yarnGPerMEl.value = toFixedNice(gpm, 4);
+    yarnMPerKgEl.value = toFixedNice(mpkg, 0);
+    maybeAutosave();
+  });
+
+  function toFixedNice(n, d) {
+    const x = Number(n);
+    if (!Number.isFinite(x)) return "";
+    return x.toFixed(d);
+  }
+
 
     // Results action buttons
   const exportCsvBtn = document.getElementById("export-csv-button");
@@ -450,7 +748,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderYarnTable(container, perColor) {
     lastPerColor = perColor || [];
-    selectedColorIdxs = new Set();
 
     if (!lastPerColor.length) {
       container.innerHTML = `<p>No color groups above the minimum area threshold.</p>`;
@@ -463,8 +760,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const len = c.yarnLength_m.toFixed(2);
       const w = c.yarnWeightWithWaste_g.toFixed(1);
       const name = colorNames.get(c.hex) || "";
+      const selectedClass = selectedColorIdxs.has(idx) ? " color-row-selected" : "";
       return `
-        <tr data-row="${idx}" class="color-row">
+        <tr data-row="${idx}" class="color-row${selectedClass}">
           <td style="white-space:nowrap;">
             <span class="swatch" style="background:${c.hex}; border:1px solid #ccc; width:18px; height:18px; display:inline-block; vertical-align:middle; margin-right:8px; border-radius:3px;"></span>
             ${c.hex.toUpperCase()} ${name ? `&nbsp;<em style="color:#555;">(${escapeHtml(name)})</em>` : ""}
@@ -493,16 +791,17 @@ document.addEventListener("DOMContentLoaded", () => {
         </table>
       </div>
       <p class="hint" style="margin-top:0.5rem;">
-        Click rows to select. Use “Rename selected” to label a color, or “Merge” to combine multiple selections into the first selected.
+        Click rows (or the preview) to select colors. Ctrl/Cmd-click for multi-select.
       </p>
     `;
 
-    // Add interactive selection behavior
+    // Rebind selection behavior for table rows
     const tbody = container.querySelector("tbody");
     tbody.addEventListener("click", (e) => {
       const tr = e.target.closest("tr[data-row]");
       if (!tr) return;
       const idx = Number(tr.getAttribute("data-row"));
+
       if (e.ctrlKey || e.metaKey) {
         toggleSelectRow(tr, idx);
       } else if (e.shiftKey) {
@@ -513,11 +812,58 @@ document.addEventListener("DOMContentLoaded", () => {
         selectRow(tr, idx);
       }
     });
+
+    // Keep legend’s active states in sync when table re-renders
+    refreshLegendActive();
   }
 
-  function selectRow(tr, idx) {
+
+  function renderLegend(container, perColor) {
+    container.innerHTML = "";
+    if (!perColor?.length) return;
+
+    perColor.forEach((c, idx) => {
+      const item = document.createElement("div");
+      item.className = "legend-item";
+      if (selectedColorIdxs.has(idx)) item.classList.add("active");
+
+      const sw = document.createElement("span");
+      sw.className = "sw";
+      sw.style.background = c.hex;
+      const label = document.createElement("span");
+      label.textContent = (colorNames.get(c.hex) || c.hex.toUpperCase());
+
+      item.appendChild(sw);
+      item.appendChild(label);
+      item.title = `${c.hex.toUpperCase()} — ${c.percentValid.toFixed(2)}%`;
+      item.addEventListener("click", () => {
+        if (selectedColorIdxs.has(idx)) selectedColorIdxs.delete(idx);
+        else selectedColorIdxs.add(idx);
+        // Re-render legend + table selection state
+        renderLegend(container, lastPerColor);
+        const containerTbl = document.getElementById("results-colors");
+        renderYarnTable(containerTbl, lastPerColor);
+        drawOverlay();
+      });
+
+      container.appendChild(item);
+    });
+  }
+
+  // Re-apply active class in legend
+  function refreshLegendActive() {
+    const items = legendEl.querySelectorAll(".legend-item");
+    items.forEach((el, i) => {
+      if (selectedColorIdxs.has(i)) el.classList.add("active");
+      else el.classList.remove("active");
+    });
+  }
+
+    function selectRow(tr, idx) {
     selectedColorIdxs.add(idx);
     tr.classList.add("color-row-selected");
+    refreshLegendActive();
+    drawOverlay();
   }
   function toggleSelectRow(tr, idx) {
     if (selectedColorIdxs.has(idx)) {
@@ -527,21 +873,72 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedColorIdxs.add(idx);
       tr.classList.add("color-row-selected");
     }
+    refreshLegendActive();
+    drawOverlay();
   }
   function clearSelection(tbody) {
     selectedColorIdxs.clear();
     tbody.querySelectorAll("tr.color-row-selected").forEach(tr => tr.classList.remove("color-row-selected"));
+    refreshLegendActive();
+    drawOverlay();
   }
   function rangeSelectRow(tbody, idx) {
-    // Select a continuous range between last selected and current
     const existing = [...selectedColorIdxs].sort((a,b)=>a-b);
     const anchor = existing.length ? existing[existing.length-1] : idx;
     const [lo, hi] = [Math.min(anchor, idx), Math.max(anchor, idx)];
     clearSelection(tbody);
     for (let i = lo; i <= hi; i++) {
-      const tr = tbody.querySelector(`tr[data-row="${i}"]`);
-      if (tr) selectRow(tr, i);
+      const row = tbody.querySelector(`tr[data-row="${i}"]`);
+      if (row) selectRow(row, i);
     }
+  }
+
+
+  overlayModeEl.addEventListener("change", drawOverlay);
+  overlayDimEl.addEventListener("input", drawOverlay);
+
+  function drawOverlay() {
+    if (!baseImageData) return;
+    const mode = overlayModeEl.value; // none | highlight | isolate | hide
+    const dimPct = Math.max(0, Math.min(95, Number(overlayDimEl.value || 70)));
+    const dimFactor = 1 - dimPct / 100;
+
+    const ctx = previewCanvas.getContext("2d");
+    // start from clean image
+    ctx.putImageData(baseImageData, 0, 0);
+    if (mode === "none" || !analysisLabels || selectedColorIdxs.size === 0) return;
+
+    // mutate a copy
+    const img = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+    const data = img.data;
+    const labels = analysisLabels;
+    const selected = new Set(selectedColorIdxs);
+
+    // Safety if analysis resolution != current canvas (shouldn't happen after restore)
+    if (labels.length !== (img.width * img.height)) {
+      // fallback: do nothing to avoid artifacts
+      ctx.putImageData(img, 0, 0);
+      return;
+    }
+
+    for (let i = 0, p = 0; i < labels.length; i++, p += 4) {
+      const lab = labels[i]; // -1 means transparent/ignored
+      const isSel = lab >= 0 && selected.has(lab);
+
+      if (mode === "highlight") {
+        if (!isSel) {
+          // dim non-selected
+          data[p] = Math.round(data[p] * dimFactor);
+          data[p + 1] = Math.round(data[p + 1] * dimFactor);
+          data[p + 2] = Math.round(data[p + 2] * dimFactor);
+        }
+      } else if (mode === "isolate") {
+        if (!isSel) data[p + 3] = Math.round(data[p + 3] * dimFactor); // fade alpha
+      } else if (mode === "hide") {
+        if (isSel) data[p + 3] = 0; // make selected invisible
+      }
+    }
+    ctx.putImageData(img, 0, 0);
   }
 
 
