@@ -81,13 +81,17 @@ export function computeYarnForClusters(clusters, constants) {
     L_m_per_cm2_single,
     g_per_m_single,
     strands,
-    wastage
+    wastage,
+    pricePerKg // optional, number or undefined
   } = constants;
 
   const results = [];
   let totalLen_m = 0;
   let totalWeight_g = 0;
   let totalArea_cm2 = 0;
+  let totalCost = 0;
+
+  const hasPrice = typeof pricePerKg === "number" && isFinite(pricePerKg) && pricePerKg > 0;
 
   for (const c of clusters) {
     const area = Number(c.areaCm2 || 0);
@@ -95,6 +99,8 @@ export function computeYarnForClusters(clusters, constants) {
     const length_all = length_single * strands;      // m, all strands together
     const weight_g = length_all * g_per_m_single;    // grams
     const weight_with_waste_g = weight_g * (1 + wastage);
+    const weight_kg = weight_with_waste_g / 1000;
+    const cost = hasPrice ? weight_kg * pricePerKg : 0;
 
     results.push({
       ...c,
@@ -102,11 +108,13 @@ export function computeYarnForClusters(clusters, constants) {
       yarnLength_m: length_all,
       yarnWeight_g: weight_g,
       yarnWeightWithWaste_g: weight_with_waste_g,
+      yarnCost: cost, // new
     });
 
     totalLen_m += length_all;
     totalWeight_g += weight_with_waste_g;
     totalArea_cm2 += area;
+    totalCost += cost;
   }
 
   return {
@@ -115,9 +123,11 @@ export function computeYarnForClusters(clusters, constants) {
       totalArea_cm2,
       totalLength_m: totalLen_m,
       totalWeightWithWaste_g: totalWeight_g,
+      totalCost: totalCost, // new
     }
   };
 }
+
 
 function isFiniteNum(x) {
   const n = Number(x);
