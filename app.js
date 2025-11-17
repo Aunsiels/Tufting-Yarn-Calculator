@@ -5,6 +5,98 @@ import {
 	loadPresets, savePreset, deletePreset
 } from "./storage.js";
 
+const CM_PER_IN = 2.54;
+const MM_PER_IN = 25.4;
+const M_PER_YD = 0.9144;
+const G_PER_OZ = 28.349523125;
+const KG_PER_LB = 0.45359237;
+const G_PER_LB = KG_PER_LB * 1000;
+const CM2_PER_FT2 = 929.0304;
+const DEFAULT_UNIT_SYSTEM = "metric";
+
+const UNIT_CONVERSIONS = {
+	rugLength: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "cm", decimals: 1, csv: "cm" },
+		imperial: { toMetric: (v) => v * CM_PER_IN, fromMetric: (v) => v / CM_PER_IN, label: "in", decimals: 2, csv: "in" }
+	},
+	pileHeight: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "mm", decimals: 0, csv: "mm" },
+		imperial: { toMetric: (v) => v * MM_PER_IN, fromMetric: (v) => v / MM_PER_IN, label: "in", decimals: 2, csv: "in" }
+	},
+	density: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "cm", decimals: 2, csv: "per_cm" },
+		imperial: { toMetric: (v) => v / CM_PER_IN, fromMetric: (v) => v * CM_PER_IN, label: "in", decimals: 2, csv: "per_in" }
+	},
+	yarnWeightSpec: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "g per m", decimals: 3, csv: "g_per_m" },
+		imperial: { toMetric: (v) => (v * G_PER_OZ) / M_PER_YD, fromMetric: (v) => (v * M_PER_YD) / G_PER_OZ, label: "oz per yd", decimals: 3, csv: "oz_per_yd" }
+	},
+	yarnLengthSpec: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "m per kg", decimals: 0, csv: "m_per_kg" },
+		imperial: { toMetric: (v) => (v * M_PER_YD) / KG_PER_LB, fromMetric: (v) => (v * KG_PER_LB) / M_PER_YD, label: "yd per lb", decimals: 0, csv: "yd_per_lb" }
+	},
+	pricePerMass: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "per kg", decimals: 2, csv: "per_kg" },
+		imperial: { toMetric: (v) => v / KG_PER_LB, fromMetric: (v) => v * KG_PER_LB, label: "per lb", decimals: 2, csv: "per_lb" }
+	},
+	skeinWeight: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "g", decimals: 0, csv: "g" },
+		imperial: { toMetric: (v) => v * G_PER_OZ, fromMetric: (v) => v / G_PER_OZ, label: "oz", decimals: 2, csv: "oz" }
+	},
+	helperLength: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "m", decimals: 1 },
+		imperial: { toMetric: (v) => v * M_PER_YD, fromMetric: (v) => v / M_PER_YD, label: "yd", decimals: 2 }
+	},
+	helperWeight: {
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "g", decimals: 1 },
+		imperial: { toMetric: (v) => v * G_PER_OZ, fromMetric: (v) => v / G_PER_OZ, label: "oz", decimals: 2 }
+	},
+	helperLengthPerMass: {
+		metric: { toMetric: (v) => v * 10, fromMetric: (v) => v / 10, label: "m per 100 g", decimals: 1, csv: "m_per_100g" },
+		imperial: { toMetric: (v) => (v * M_PER_YD) / KG_PER_LB, fromMetric: (v) => (v * KG_PER_LB) / M_PER_YD, label: "yd per lb", decimals: 0, csv: "yd_per_lb" }
+	},
+	area: {
+		metric: { fromMetric: (v) => v, label: "cm²", decimals: 2, csv: "cm2" },
+		imperial: { fromMetric: (v) => v / CM2_PER_FT2, label: "ft²", decimals: 2, csv: "ft2" }
+	},
+	yarnTotalLength: {
+		metric: { fromMetric: (v) => v, label: "m", decimals: 2, csv: "m" },
+		imperial: { fromMetric: (v) => v / M_PER_YD, label: "yd", decimals: 2, csv: "yd" }
+	},
+	yarnWeightResult: {
+		metric: { fromMetric: (v) => v, label: "g", decimals: 1, csv: "g" },
+		imperial: { fromMetric: (v) => v / G_PER_LB, label: "lb", decimals: 2, csv: "lb" }
+	}
+};
+
+const CURRENCY_INFO = {
+	metric: { symbol: "€", code: "EUR" },
+	imperial: { symbol: "$", code: "USD" }
+};
+
+const LABEL_TEXT = {
+	"unit-system-label": { metric: "Unit system", imperial: "Unit system" },
+	"rug-width-label": { metric: "Rug width (cm)", imperial: "Rug width (in)" },
+	"rug-height-label": { metric: "Rug height (cm)", imperial: "Rug height (in)" },
+	"pile-height-label": { metric: "Pile height (mm)", imperial: "Pile height (in)" },
+	"lines-per-label": { metric: "Lines per cm", imperial: "Lines per in" },
+	"stitches-per-label": { metric: "Stitches per cm", imperial: "Stitches per in" },
+	"yarn-weight-label": {
+		metric: "Yarn weight (g per meter, single strand)",
+		imperial: "Yarn weight (oz per yard, single strand)"
+	},
+	"yarn-length-label": {
+		metric: "Yarn length (m per kg, single strand)",
+		imperial: "Yarn length (yd per lb, single strand)"
+	},
+	"yarn-price-label": { metric: "Yarn price (per kg)", imperial: "Yarn price (per lb)" },
+	"skein-weight-label": { metric: "Skein weight (g)", imperial: "Skein weight (oz)" },
+	"skein-price-label": { metric: "Skein price (€)", imperial: "Skein price ($)" },
+	"helper-length-label": { metric: "Label length (m)", imperial: "Label length (yd)" },
+	"helper-weight-label": { metric: "Label weight (g)", imperial: "Label weight (oz)" },
+	"helper-mass-length-label": { metric: "m per 100 g", imperial: "yd per lb" }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
 	// Panels & outputs
 	const analyzeButton = document.getElementById("analyze-button");
@@ -15,6 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	const previewPlaceholder = document.getElementById("preview-placeholder");
 	const resultsSummary = document.getElementById("results-summary");
 	const resultsColors = document.getElementById("results-colors");
+	const labelEls = {};
+	Object.keys(LABEL_TEXT).forEach((key) => {
+		labelEls[key] = document.querySelector(`[data-label="${key}"]`);
+	});
 
 	// Mode
 	const modeRadios = document.querySelectorAll('input[name="mode"]');
@@ -24,6 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const rugWidthEl = document.getElementById("rug-width");
 	const rugHeightEl = document.getElementById("rug-height");
 	const lockAspectEl = document.getElementById("lock-aspect");
+	const unitSystemEl = document.getElementById("unit-system");
 	const pileTypeEl = document.getElementById("pile-type");
 	const pileHeightEl = document.getElementById("pile-height");
 	const densityPresetEl = document.getElementById("density-preset");
@@ -72,6 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	let appState = {
 		mode: "beginner",
+		unitSystem: DEFAULT_UNIT_SYSTEM,
 		imageLoaded: false,
 		imageNatural: { w: 0, h: 0 },
 	};
@@ -87,6 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	let analysisLabels = null;     // Int16Array of length w*h, mapping to kept cluster index or -1
 	let analysisSize = { width: 0, height: 0 }; // should match previewCanvas
 	let hoverClusterIdx = -1;
+	let lastRenderPayload = null;
 
 
 	/* --------------------------- UI Mode handling --------------------------- */
@@ -101,6 +200,12 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (e.target.checked) setMode(e.target.value);
 			maybeAutosave();
 		});
+	});
+
+	setUnitSystem(unitSystemEl?.value || DEFAULT_UNIT_SYSTEM, { convertExistingValues: false, skipRefresh: true });
+	unitSystemEl?.addEventListener("change", () => {
+		setUnitSystem(unitSystemEl.value);
+		maybeAutosave();
 	});
 
 	/* ------------------------------ Image load ----------------------------- */
@@ -138,6 +243,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 				resultsSummary.innerHTML = "<p>Ready to analyze. Click “Analyze image”.</p>";
 				resultsColors.innerHTML = "";
+				lastPerColor = [];
+				selectedColorIdxs.clear();
+				lastRenderPayload = null;
+				renderLegend(legendEl, lastPerColor);
 			};
 			img.src = loadEvent.target.result;
 		};
@@ -347,8 +456,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		// Read params
 		const params = readForm();
 		if (!(params.rugWidthCm > 0 && params.rugHeightCm > 0)) {
+			const lengthUnit = getUnitLabel("rugLength");
 			resultsSummary.innerHTML = `<p style="color:#b91c1c">
-	Please enter a positive Rug width & height (cm) before analyzing.
+	Please enter a positive Rug width & height (${lengthUnit}) before analyzing.
       </p>`;
 			return;
 		}
@@ -423,7 +533,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		selectedColorIdxs.clear();
 
 		// 4) Render
-		renderSummary(resultsSummary, { clusters, totals, dropped, constants, yarn });
+		const payload = { clusters, totals, dropped, constants, yarn };
+		renderSummary(resultsSummary, payload);
+		lastRenderPayload = payload;
 		renderYarnTable(resultsColors, yarn.perColor);
 
 		if (restoreAfter) {
@@ -587,36 +699,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// --- Yarn helper: Label length/weight -> g/m & m/kg ---
 	btnApplyLenWt.addEventListener("click", () => {
-		const Lm = Number(yhLenM.value);
-		const Wg = Number(yhWtG.value);
-		if (!isFinite(Lm) || !isFinite(Wg) || Lm <= 0 || Wg <= 0) {
-			alert("Please enter positive values for label length (m) and weight (g).");
+		const lengthInput = Number(yhLenM.value);
+		const weightInput = Number(yhWtG.value);
+		const lengthM = convertDisplayToMetric("helperLength", lengthInput);
+		const weightG = convertDisplayToMetric("helperWeight", weightInput);
+		if (!isFinite(lengthM) || !isFinite(weightG) || lengthM <= 0 || weightG <= 0) {
+			alert("Please enter positive values for label length and weight.");
 			return;
 		}
 		// g/m = grams / meters
-		const gpm = Wg / Lm;
+		const gpm = weightG / lengthM;
 		// m/kg = meters per 1000 g
-		const mpkg = (Lm / Wg) * 1000;
+		const mpkg = (lengthM / weightG) * 1000;
 
-		yarnGPerMEl.value = toFixedNice(gpm, 4);
-		yarnMPerKgEl.value = toFixedNice(mpkg, 0);
+		setFieldFromMetric(yarnGPerMEl, gpm, "yarnWeightSpec");
+		setFieldFromMetric(yarnMPerKgEl, mpkg, "yarnLengthSpec");
 		maybeAutosave();
 	});
 
 	// --- Yarn helper: m per 100 g -> g/m & m/kg ---
 	btnApplyM100.addEventListener("click", () => {
-		const m100 = Number(yhM100.value);
-		if (!isFinite(m100) || m100 <= 0) {
-			alert("Enter a positive value for m per 100 g.");
+		const rawInput = Number(yhM100.value);
+		const lengthPerMass = convertDisplayToMetric("helperLengthPerMass", rawInput);
+		if (!isFinite(lengthPerMass) || lengthPerMass <= 0) {
+			alert("Enter a positive value for the length-per-weight helper field.");
 			return;
 		}
-		// m per 100 g -> m/kg = m100 * 10
-		const mpkg = m100 * 10;
+		// helperLengthPerMass already returns m/kg
+		const mpkg = lengthPerMass;
 		// g/m = 1000 / m/kg
 		const gpm = 1000 / mpkg;
 
-		yarnGPerMEl.value = toFixedNice(gpm, 4);
-		yarnMPerKgEl.value = toFixedNice(mpkg, 0);
+		setFieldFromMetric(yarnGPerMEl, gpm, "yarnWeightSpec");
+		setFieldFromMetric(yarnMPerKgEl, mpkg, "yarnLengthSpec");
 		maybeAutosave();
 	});
 
@@ -632,16 +747,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		// m/kg = 1000 / g/m
 		const mpkg = 1000 / gpm;
 
-		yarnGPerMEl.value = toFixedNice(gpm, 4);
-		yarnMPerKgEl.value = toFixedNice(mpkg, 0);
+		setFieldFromMetric(yarnGPerMEl, gpm, "yarnWeightSpec");
+		setFieldFromMetric(yarnMPerKgEl, mpkg, "yarnLengthSpec");
 		maybeAutosave();
 	});
-
-	function toFixedNice(n, d) {
-		const x = Number(n);
-		if (!Number.isFinite(x)) return "";
-		return x.toFixed(d);
-	}
 
 
 	// Results action buttons
@@ -759,10 +868,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// Keep previously computed pixel/area box stats if available
 		// We can derive some from the canvas if needed; simplest is to keep last known.
+		const prevTotals = lastRenderPayload?.totals || {};
+		const fallbackPixels = (analysisLabels ? analysisLabels.length - (analysisLabels.filter(v => v < 0).length) : 0);
 		const fauxTotals = {
-			// Use what you last rendered if you kept it; otherwise keep minimal fields:
-			pixelsValid: (analysisLabels ? analysisLabels.length - (analysisLabels.filter(v => v < 0).length) : 0),
-			boxAreaCm2: (previewCanvas.width * previewCanvas.height), // not exact cm², but renderSummary handles these mostly informationally
+			...prevTotals,
+			pixelsValid: prevTotals.pixelsValid ?? fallbackPixels,
+			boxAreaCm2: prevTotals.boxAreaCm2 ?? 0,
 			areaCm2: totalA
 		};
 
@@ -776,26 +887,33 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		};
 
-		// Render with minimal viable args; you may pass previous dropped/constants if you keep them
-		renderSummary(resultsSummary, {
+		const payload = {
 			clusters: lastPerColor, // close enough for count
 			totals: fauxTotals,
 			dropped: [],
 			constants: null,
 			yarn: fauxYarn
-		});
+		};
+
+		// Render with minimal viable args
+		renderSummary(resultsSummary, payload);
+		lastRenderPayload = payload;
 	}
 
 
 	function buildCsv(perColor) {
+		const areaUnitSlug = getUnitCsvLabel("area");
+		const lengthUnitSlug = getUnitCsvLabel("yarnTotalLength");
+		const weightUnitSlug = getUnitCsvLabel("yarnWeightResult");
+		const currencyCode = getCurrencyCode().toLowerCase();
 		const header = [
 			"color_hex",
 			"color_name",
 			"percent_of_valid",
-			"area_cm2",
-			"yarn_m",
-			"weight_g_incl_waste",
-			"cost_eur",
+			`area_${areaUnitSlug}`,
+			`yarn_${lengthUnitSlug}`,
+			`weight_${weightUnitSlug}_incl_waste`,
+			`cost_${currencyCode}`,
 			"pixels"
 		].join(",");
 
@@ -803,9 +921,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			c.hex,
 			csvEscape(colorNames.get(c.hex) || ""),
 			numFmt(c.percentValid, 2),
-			numFmt(c.areaCm2, 2),
-			numFmt(c.yarnLength_m, 2),
-			numFmt(c.yarnWeightWithWaste_g, 1),
+			numFmt(convertMetricToDisplay("area", c.areaCm2), 2),
+			numFmt(convertMetricToDisplay("yarnTotalLength", c.yarnLength_m), 2),
+			numFmt(convertMetricToDisplay("yarnWeightResult", c.yarnWeightWithWaste_g), 2),
 			numFmt(c.yarnCost, 2),
 			String(c.pixelCount)
 		].join(","));
@@ -820,9 +938,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			"TOTAL",
 			"",
 			"",
-			numFmt(totalA, 2),
-			numFmt(totalLen, 2),
-			numFmt(totalW, 1),
+			numFmt(convertMetricToDisplay("area", totalA), 2),
+			numFmt(convertMetricToDisplay("yarnTotalLength", totalLen), 2),
+			numFmt(convertMetricToDisplay("yarnWeightResult", totalW), 2),
 			numFmt(totalCost, 2),
 			""
 		].join(","));
@@ -896,25 +1014,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	/* --------------------------------- Utils -------------------------------- */
 	function readForm() {
+		const rugWidthInput = num(rugWidthEl.value);
+		const rugHeightInput = num(rugHeightEl.value);
+		const pileHeightInput = num(pileHeightEl.value);
+		const linesInput = num(linesPerCmEl?.value);
+		const stitchesInput = num(stitchesPerCmEl?.value);
+		const yarnGPerMInput = posNumOrUndef(yarnGPerMEl.value);
+		const yarnMPerKgInput = posNumOrUndef(yarnMPerKgEl.value);
+		const yarnPriceInput = posNumOrUndef(yarnPricePerKgEl.value);
+		const skeinWeightInput = posNumOrUndef(skeinWeightEl.value);
+
 		return {
 			mode: appState.mode,
-			rugWidthCm: num(rugWidthEl.value),
-			rugHeightCm: num(rugHeightEl.value),
+			unitSystem: appState.unitSystem,
+			rugWidthCm: convertDisplayToMetric("rugLength", rugWidthInput),
+			rugHeightCm: convertDisplayToMetric("rugLength", rugHeightInput),
 			lockAspect: !!lockAspectEl.checked,
 
 			pileType: pileTypeEl.value || "cut",
-			pileHeightMm: numDef(pileHeightEl.value, 12),
+			pileHeightMm: convertDisplayToMetric("pileHeight", pileHeightInput) || 0,
 
 			densityPreset: densityPresetEl?.value || "medium",
-			linesPerCm: num(linesPerCmEl?.value),
-			stitchesPerCm: num(stitchesPerCmEl?.value),
+			linesPerCm: convertDisplayToMetric("density", linesInput),
+			stitchesPerCm: convertDisplayToMetric("density", stitchesInput),
 
 			yarnName: yarnNameEl.value || "",
 			strands: intDef(yarnStrandsEl.value, 2),
-			yarnGPerM: posNumOrUndef(yarnGPerMEl.value),
-			yarnMPerKg: posNumOrUndef(yarnMPerKgEl.value),
-			yarnPricePerKg: posNumOrUndef(yarnPricePerKgEl.value),
-			skeinWeightG: posNumOrUndef(skeinWeightEl.value),
+			yarnGPerM: yarnGPerMInput !== undefined ? convertDisplayToMetric("yarnWeightSpec", yarnGPerMInput) : undefined,
+			yarnMPerKg: yarnMPerKgInput !== undefined ? convertDisplayToMetric("yarnLengthSpec", yarnMPerKgInput) : undefined,
+			yarnPricePerKg: yarnPriceInput !== undefined ? convertDisplayToMetric("pricePerMass", yarnPriceInput) : undefined,
+			skeinWeightG: skeinWeightInput !== undefined ? convertDisplayToMetric("skeinWeight", skeinWeightInput) : undefined,
 			skeinPrice: posNumOrUndef(skeinPriceEl.value),
 			wastagePercent: numDef(wastagePercentEl.value, 15),
 
@@ -925,23 +1054,26 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	function applySettings(s) {
+		if (s.unitSystem && s.unitSystem !== appState.unitSystem) {
+			setUnitSystem(s.unitSystem, { convertExistingValues: false, skipRefresh: true });
+		}
 		// Mode handled by setMode + radios
-		setVal(rugWidthEl, s.rugWidthCm);
-		setVal(rugHeightEl, s.rugHeightCm);
+		setFieldFromMetric(rugWidthEl, s.rugWidthCm, "rugLength");
+		setFieldFromMetric(rugHeightEl, s.rugHeightCm, "rugLength");
 
 		setVal(pileTypeEl, s.pileType);
-		setVal(pileHeightEl, s.pileHeightMm);
+		setFieldFromMetric(pileHeightEl, s.pileHeightMm, "pileHeight");
 
 		setVal(densityPresetEl, s.densityPreset);
-		setVal(linesPerCmEl, s.linesPerCm);
-		setVal(stitchesPerCmEl, s.stitchesPerCm);
+		setFieldFromMetric(linesPerCmEl, s.linesPerCm, "density");
+		setFieldFromMetric(stitchesPerCmEl, s.stitchesPerCm, "density");
 
 		setVal(yarnNameEl, s.yarnName);
 		setVal(yarnStrandsEl, s.strands);
-		setVal(yarnGPerMEl, s.yarnGPerM);
-		setVal(yarnMPerKgEl, s.yarnMPerKg);
-		setVal(yarnPricePerKgEl, s.yarnPricePerKg);
-		setVal(skeinWeightEl, s.skeinWeightG);
+		setFieldFromMetric(yarnGPerMEl, s.yarnGPerM, "yarnWeightSpec");
+		setFieldFromMetric(yarnMPerKgEl, s.yarnMPerKg, "yarnLengthSpec");
+		setFieldFromMetric(yarnPricePerKgEl, s.yarnPricePerKg, "pricePerMass");
+		setFieldFromMetric(skeinWeightEl, s.skeinWeightG, "skeinWeight");
 		setVal(skeinPriceEl, s.skeinPrice);
 		setVal(wastagePercentEl, s.wastagePercent);
 
@@ -981,7 +1113,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 		const s = readForm();
-		saveLastSettings({ ...s, mode: appState.mode });
+		saveLastSettings({ ...s, mode: appState.mode, unitSystem: appState.unitSystem });
 	}
 
 	// helpers
@@ -992,25 +1124,180 @@ document.addEventListener("DOMContentLoaded", () => {
 	function setVal(el, val) { if (!el) return; if (val === undefined || val === null) return; el.value = String(val); }
 	function escapeHtml(s) { return (s ?? "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[m])); }
 
+	function getCurrentUnitSystemKey() {
+		const key = appState.unitSystem || DEFAULT_UNIT_SYSTEM;
+		return UNIT_CONVERSIONS.rugLength[key] ? key : DEFAULT_UNIT_SYSTEM;
+	}
+
+	function getCurrencyInfo() {
+		return CURRENCY_INFO[getCurrentUnitSystemKey()] || CURRENCY_INFO[DEFAULT_UNIT_SYSTEM];
+	}
+	function getCurrencySymbol() { return getCurrencyInfo().symbol; }
+	function getCurrencyCode() { return getCurrencyInfo().code; }
+
+	function getUnitLabel(type) {
+		const entry = UNIT_CONVERSIONS[type]?.[getCurrentUnitSystemKey()];
+		return entry?.label || "";
+	}
+	function getUnitCsvLabel(type) {
+		const entry = UNIT_CONVERSIONS[type]?.[getCurrentUnitSystemKey()];
+		if (entry?.csv) return entry.csv;
+		const label = entry?.label || type;
+		return label.replace(/[^\w]/g, "").toLowerCase() || type;
+	}
+
+	function convertDisplayToMetric(type, value, systemKey = getCurrentUnitSystemKey()) {
+		const entry = UNIT_CONVERSIONS[type]?.[systemKey];
+		const numVal = Number(value);
+		if (!entry || typeof entry.toMetric !== "function" || !Number.isFinite(numVal)) return numVal;
+		return entry.toMetric(numVal);
+	}
+
+	function convertMetricToDisplay(type, value, systemKey = getCurrentUnitSystemKey()) {
+		const entry = UNIT_CONVERSIONS[type]?.[systemKey];
+		const numVal = Number(value);
+		if (!Number.isFinite(numVal)) return numVal;
+		if (!entry || typeof entry.fromMetric !== "function") return numVal;
+		return entry.fromMetric(numVal);
+	}
+
+	function formatNumber(value, decimals = 2) {
+		if (!Number.isFinite(value)) return "";
+		let v = Math.abs(value) < 1e-9 ? 0 : value;
+		if (typeof decimals === "number") {
+			let str = v.toFixed(decimals);
+			if (decimals > 0) {
+				str = str.replace(/(\.\d*?[1-9])0+$/, "$1");
+				str = str.replace(/\.0+$/, "");
+			}
+			return str;
+		}
+		return String(v);
+	}
+
+	function formatValueForDisplay(value, type, { useLocale = false, decimals } = {}) {
+		const converted = convertMetricToDisplay(type, value);
+		if (!Number.isFinite(converted)) return "";
+		const entry = UNIT_CONVERSIONS[type]?.[getCurrentUnitSystemKey()];
+		const digits = decimals ?? entry?.decimals ?? 2;
+		if (useLocale) {
+			return converted.toLocaleString(undefined, { maximumFractionDigits: digits });
+		}
+		return formatNumber(converted, digits);
+	}
+
+	function setFieldFromMetric(el, metricValue, type) {
+		if (!el || metricValue === undefined || metricValue === null) return;
+		const converted = convertMetricToDisplay(type, metricValue);
+		if (!Number.isFinite(converted)) return;
+		const entry = UNIT_CONVERSIONS[type]?.[getCurrentUnitSystemKey()];
+		el.value = formatNumber(converted, entry?.decimals ?? 2);
+	}
+
+	function setUnitSystem(system, { convertExistingValues = true, skipRefresh = false } = {}) {
+		const target = UNIT_CONVERSIONS.rugLength[system] ? system : DEFAULT_UNIT_SYSTEM;
+		const prev = getCurrentUnitSystemKey();
+		if (convertExistingValues && prev !== target) {
+			convertFieldsBetweenSystems(prev, target);
+		}
+		appState.unitSystem = target;
+		if (unitSystemEl) unitSystemEl.value = target;
+		updateUnitLabels();
+		if (!skipRefresh) refreshUnitsUI();
+	}
+
+	function convertFieldsBetweenSystems(fromSystem, toSystem) {
+		if (!fromSystem || !toSystem || fromSystem === toSystem) return;
+		const fields = [
+			{ el: rugWidthEl, type: "rugLength" },
+			{ el: rugHeightEl, type: "rugLength" },
+			{ el: pileHeightEl, type: "pileHeight" },
+			{ el: linesPerCmEl, type: "density" },
+			{ el: stitchesPerCmEl, type: "density" },
+			{ el: yarnGPerMEl, type: "yarnWeightSpec" },
+			{ el: yarnMPerKgEl, type: "yarnLengthSpec" },
+			{ el: yarnPricePerKgEl, type: "pricePerMass" },
+			{ el: skeinWeightEl, type: "skeinWeight" },
+			{ el: yhLenM, type: "helperLength" },
+			{ el: yhWtG, type: "helperWeight" },
+			{ el: yhM100, type: "helperLengthPerMass" }
+		];
+		fields.forEach(({ el, type }) => convertFieldValueBetweenSystems(el, type, fromSystem, toSystem));
+	}
+
+	function convertFieldValueBetweenSystems(el, type, fromSystem, toSystem) {
+		if (!el || !UNIT_CONVERSIONS[type]) return;
+		const fromEntry = UNIT_CONVERSIONS[type][fromSystem];
+		const toEntry = UNIT_CONVERSIONS[type][toSystem];
+		if (!fromEntry || !toEntry || typeof fromEntry.toMetric !== "function" || typeof toEntry.fromMetric !== "function") return;
+		const rawStr = el.value;
+		if (rawStr === undefined || rawStr === null || rawStr === "") return;
+		const raw = Number(rawStr);
+		if (!Number.isFinite(raw)) return;
+		const base = fromEntry.toMetric(raw);
+		if (!Number.isFinite(base)) return;
+		const converted = toEntry.fromMetric(base);
+		el.value = formatNumber(converted, toEntry.decimals ?? 2);
+	}
+
+	function updateUnitLabels() {
+		const system = getCurrentUnitSystemKey();
+		Object.entries(LABEL_TEXT).forEach(([key, map]) => {
+			const el = labelEls[key];
+			if (el && map && map[system]) {
+				el.textContent = map[system];
+			}
+		});
+		if (pileHeightEl) pileHeightEl.step = system === "imperial" ? "0.01" : "1";
+		if (skeinWeightEl) skeinWeightEl.step = system === "imperial" ? "0.1" : "1";
+		if (yhWtG) yhWtG.step = system === "imperial" ? "0.1" : "1";
+		if (yhLenM) yhLenM.step = system === "imperial" ? "0.1" : "1";
+		if (skeinWeightEl) skeinWeightEl.placeholder = system === "imperial" ? "e.g. 3.5" : "e.g. 100";
+		if (yhWtG) yhWtG.placeholder = system === "imperial" ? "e.g. 3.5" : "e.g. 100";
+		if (yhLenM) yhLenM.placeholder = system === "imperial" ? "e.g. 275" : "e.g. 250";
+		if (yhM100) yhM100.placeholder = system === "imperial" ? "e.g. 1600" : "e.g. 250";
+		if (yarnPricePerKgEl) yarnPricePerKgEl.placeholder = system === "imperial" ? "e.g. 12.50" : "e.g. 25.00";
+	}
+
+	function refreshUnitsUI() {
+		if (lastRenderPayload) {
+			renderSummary(resultsSummary, lastRenderPayload);
+		}
+		if (lastPerColor?.length) {
+			renderYarnTable(resultsColors, lastPerColor);
+		}
+	}
+
 	/* -------------------------- Summary/Results UI ------------------------- */
-	function renderSummary(container, { clusters, totals, dropped, constants, yarn }) {
-		const fmt = (x, d = 2) => Number(x).toLocaleString(undefined, { maximumFractionDigits: d });
-		const totalColors = clusters.length;
+	function renderSummary(container, { clusters, totals, dropped, yarn } = {}) {
+		const fmtLocale = (value, type, digits = 2) => formatValueForDisplay(value, type, { useLocale: true, decimals: digits }) || "0";
+		const fmtPlain = (value, digits = 0) => {
+			const n = Number(value ?? 0);
+			return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: digits }) : "0";
+		};
+		const areaLabel = getUnitLabel("area");
+		const lengthLabel = getUnitLabel("yarnTotalLength");
+		const weightLabel = getUnitLabel("yarnWeightResult");
+		const currencySymbol = getCurrencySymbol();
+		const totalColors = clusters?.length ?? 0;
 		const droppedInfo = dropped && dropped.length ? ` (dropped ${dropped.length} tiny group${dropped.length > 1 ? 's' : ''})` : '';
 		const totalLen = yarn?.totals?.totalLength_m ?? 0;
 		const totalW = yarn?.totals?.totalWeightWithWaste_g ?? 0;
 		const totalCost = yarn?.totals?.totalCost ?? 0;
 		const hasCost = totalCost > 0.0001;
+		const totalsObj = totals || {};
 
 		container.innerHTML = `
     <p><strong>Detected colors:</strong> ${totalColors}${droppedInfo}</p>
     <p><strong>Image size:</strong> ${previewCanvas.width}×${previewCanvas.height} px
-       &nbsp;|&nbsp; <strong>Valid pixels:</strong> ${fmt(totals.pixelsValid, 0)}</p>
-    <p><strong>Rug bounding box area:</strong> ${fmt(totals.boxAreaCm2)} cm²
-       &nbsp;|&nbsp; <strong>Estimated tufted area:</strong> ${fmt(totals.areaCm2)} cm²</p>
+       &nbsp;|&nbsp; <strong>Valid pixels:</strong> ${fmtPlain(totalsObj.pixelsValid, 0)}</p>
+    <p><strong>Rug bounding box area:</strong> ${fmtLocale(totalsObj.boxAreaCm2, "area")}
+       ${areaLabel}
+       &nbsp;|&nbsp; <strong>Estimated tufted area:</strong> ${fmtLocale(totalsObj.areaCm2, "area")} ${areaLabel}</p>
     <p><strong>Yarn (all strands, incl. wastage):</strong>
-       ${fmt(totalLen)} m &nbsp;|&nbsp; ${fmt(totalW)} g
-       ${hasCost ? `&nbsp;|&nbsp; ~${fmt(totalCost, 2)} €` : ""}</p>
+       ${fmtLocale(totalLen, "yarnTotalLength")}
+       ${lengthLabel} &nbsp;|&nbsp; ${fmtLocale(totalW, "yarnWeightResult")} ${weightLabel}
+       ${hasCost ? `&nbsp;|&nbsp; ~${fmtPlain(totalCost, 2)} ${currencySymbol}` : ""}</p>
   `;
 
 	}
@@ -1023,12 +1310,16 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		const areaHeader = `Area (${getUnitLabel("area")})`;
+		const lengthHeader = `Yarn (${getUnitLabel("yarnTotalLength")})`;
+		const weightHeader = `Weight (${getUnitLabel("yarnWeightResult")}, incl. waste)`;
+		const costHeader = `Cost (${getCurrencySymbol()})`;
 		const rows = lastPerColor.map((c, idx) => {
 			const pct = c.percentValid.toFixed(2);
-			const area = c.areaCm2.toFixed(2);
-			const len = c.yarnLength_m.toFixed(2);
-			const w = c.yarnWeightWithWaste_g.toFixed(1);
-			const cost = c.yarnCost ? c.yarnCost.toFixed(2) : "";
+			const area = formatValueForDisplay(c.areaCm2, "area");
+			const len = formatValueForDisplay(c.yarnLength_m, "yarnTotalLength");
+			const w = formatValueForDisplay(c.yarnWeightWithWaste_g, "yarnWeightResult");
+			const cost = c.yarnCost ? Number(c.yarnCost).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "";
 			const name = colorNames.get(c.hex) || "";
 			const selectedClass = selectedColorIdxs.has(idx) ? " color-row-selected" : "";
 			return `
@@ -1053,10 +1344,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	    <tr>
 	      <th style="text-align:left; border-bottom:1px solid #eee; padding-bottom:6px;">Color</th>
 	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">% of valid</th>
-	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">Area (cm²)</th>
-	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">Yarn (m)</th>
-	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">Weight (g, incl. waste)</th>
-	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">Cost (€)</th>
+	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">${areaHeader}</th>
+	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">${lengthHeader}</th>
+	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">${weightHeader}</th>
+	      <th style="text-align:right; border-bottom:1px solid #eee; padding-bottom:6px;">${costHeader}</th>
 	    </tr>
 	  </thead>
 	  <tbody>${rows}</tbody>
@@ -1284,18 +1575,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// --- Parameters block
 		const params = readForm(); // existing helper in your app
+		const rugUnit = getUnitLabel("rugLength");
+		const pileUnit = getUnitLabel("pileHeight");
+		const densityUnit = getUnitLabel("density");
+		const priceUnit = getUnitLabel("pricePerMass");
+		const skeinUnit = getUnitLabel("skeinWeight");
+		const areaLabel = getUnitLabel("area");
+		const lengthLabel = getUnitLabel("yarnTotalLength");
+		const weightLabel = getUnitLabel("yarnWeightResult");
+		const currencySymbol = getCurrencySymbol();
 		const paramLines = [
 			`Mode: ${params.mode === "advanced" ? "Advanced" : "Beginner"}`,
-			`Rug size: ${fmt(params.rugWidthCm)} × ${fmt(params.rugHeightCm)} cm`,
-			`Pile: ${params.pileType}, ${fmt(params.pileHeightMm)} mm`,
+			`Rug size: ${fmtDisplay(params.rugWidthCm, "rugLength")} × ${fmtDisplay(params.rugHeightCm, "rugLength")} ${rugUnit}`,
+			`Pile: ${params.pileType}, ${fmtDisplay(params.pileHeightMm, "pileHeight")} ${pileUnit}`,
 			params.mode === "advanced"
-				? `Density: ${fmt(params.linesPerCm)} lines/cm × ${fmt(params.stitchesPerCm)} stitches/cm`
+				? `Density: ${fmtDisplay(params.linesPerCm, "density")} lines/${densityUnit} × ${fmtDisplay(params.stitchesPerCm, "density")} stitches/${densityUnit}`
 				: `Density preset: ${params.densityPreset}`,
 			`Yarn: ${params.yarnName || "—"} | Strands: ${params.strands}`,
 			params.yarnGPerM
-				? `Yarn g/m: ${fmt(params.yarnGPerM)}`
+				? `Yarn weight: ${fmtDisplay(params.yarnGPerM, "yarnWeightSpec")} ${getUnitLabel("yarnWeightSpec")}`
 				: params.yarnMPerKg
-					? `Yarn m/kg: ${fmt(params.yarnMPerKg)}`
+					? `Yarn length: ${fmtDisplay(params.yarnMPerKg, "yarnLengthSpec")} ${getUnitLabel("yarnLengthSpec")}`
 					: `Yarn spec: default (set in app)`,
 			`Wastage: ${fmt(params.wastagePercent)}%`,
 			`Tolerance: ${params.tolerance}`,
@@ -1304,7 +1604,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		];
 
 		if (params.yarnPricePerKg && params.yarnPricePerKg > 0) {
-			paramLines.push(`Yarn price: ${fmt(params.yarnPricePerKg, 2)} €/kg`);
+			paramLines.push(`Yarn price: ${currencySymbol}${fmtDisplay(params.yarnPricePerKg, "pricePerMass")} ${priceUnit}`);
 		} else if (
 			params.skeinWeightG &&
 			params.skeinWeightG > 0 &&
@@ -1313,7 +1613,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		) {
 			const pricePerKg = (params.skeinPrice / params.skeinWeightG) * 1000;
 			paramLines.push(
-				`Yarn price: ${fmt(pricePerKg, 2)} €/kg (from ${params.skeinWeightG} g @ ${fmt(params.skeinPrice, 2)} €)`
+				`Yarn price: ${currencySymbol}${fmtDisplay(pricePerKg, "pricePerMass")} ${priceUnit} (from ${fmtDisplay(params.skeinWeightG, "skeinWeight")} ${skeinUnit} @ ${currencySymbol}${formatNumber(params.skeinPrice, 2)})`
 			);
 		}
 
@@ -1342,11 +1642,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		doc.text("Totals", colX, y);
 		doc.setFont("helvetica", "normal");
 		y += 14;
-		doc.text(`Area (kept colors): ${fmt(totalA, 2)} cm²`, colX, y); y += 12;
-		doc.text(`Yarn length (all strands): ${fmt(totalLen, 2)} m`, colX, y); y += 12;
-		doc.text(`Weight incl. wastage: ${fmt(totalW, 1)} g`, colX, y); y += 12;
+		doc.text(`Area (kept colors): ${fmtDisplay(totalA, "area")} ${areaLabel}`, colX, y); y += 12;
+		doc.text(`Yarn length (all strands): ${fmtDisplay(totalLen, "yarnTotalLength")} ${lengthLabel}`, colX, y); y += 12;
+		doc.text(`Weight incl. wastage: ${fmtDisplay(totalW, "yarnWeightResult")} ${weightLabel}`, colX, y); y += 12;
 		if (totalCost > 0.0001) {
-			doc.text(`Yarn cost: ~${fmt(totalCost, 2)} €`, colX, y); y += 12;
+			doc.text(`Yarn cost: ~${currencySymbol}${formatNumber(totalCost, 2)}`, colX, y); y += 12;
 		}
 
 		// Move below image if needed
@@ -1359,12 +1659,12 @@ document.addEventListener("DOMContentLoaded", () => {
 			return {
 				swatch: c.hex,                 // we'll draw the square in didDrawCell
 				color: name ? `${c.hex.toUpperCase()} (${name})` : c.hex.toUpperCase(),
-				percent: toFixed(c.percentValid, 2) + "%",
-				area: toFixed(c.areaCm2, 2),
-				yarnm: toFixed(c.yarnLength_m, 2),
-				weightg: toFixed(c.yarnWeightWithWaste_g, 1),
+				percent: `${formatNumber(c.percentValid, 2)}%`,
+				area: formatValueForDisplay(c.areaCm2, "area"),
+				yarnm: formatValueForDisplay(c.yarnLength_m, "yarnTotalLength"),
+				weightg: formatValueForDisplay(c.yarnWeightWithWaste_g, "yarnWeightResult"),
 				pixels: c.pixelCount.toLocaleString(),
-				cost: c.yarnCost ? toFixed(c.yarnCost, 2) : "",
+				cost: c.yarnCost ? formatNumber(c.yarnCost, 2) : "",
 			};
 		});
 
@@ -1384,11 +1684,11 @@ document.addEventListener("DOMContentLoaded", () => {
 				{ header: "", dataKey: "swatch" }, // no header text for the swatch
 				{ header: "Color", dataKey: "color" },
 				{ header: "% of valid", dataKey: "percent" },
-				{ header: "Area (cm²)", dataKey: "area" },
-				{ header: "Yarn (m)", dataKey: "yarnm" },
-				{ header: "Weight (g, incl. waste)", dataKey: "weightg" },
+				{ header: `Area (${areaLabel})`, dataKey: "area" },
+				{ header: `Yarn (${lengthLabel})`, dataKey: "yarnm" },
+				{ header: `Weight (${weightLabel}, incl. waste)`, dataKey: "weightg" },
 				{ header: "Pixels", dataKey: "pixels" },
-				{ header: "Cost (€)", dataKey: "cost" }
+				{ header: `Cost (${currencySymbol})`, dataKey: "cost" }
 			],
 			body: rows,
 
@@ -1433,9 +1733,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (!Number.isFinite(v)) return "—";
 			return v.toLocaleString(undefined, { maximumFractionDigits: d });
 		}
-		function toFixed(n, d) {
-			const v = Number(n);
-			return Number.isFinite(v) ? v.toFixed(d) : "";
+		function fmtDisplay(value, type) {
+			return formatValueForDisplay(value, type, { useLocale: false }) || "—";
 		}
 		function hexToRgb(hex) {
 			const v = hex.replace("#", "");
@@ -1480,4 +1779,3 @@ document.addEventListener("DOMContentLoaded", () => {
 	updateActionButtons();
 
 });
-

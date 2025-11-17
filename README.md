@@ -22,6 +22,7 @@ Upload your design image, enter rug size and yarn parameters, and get a detailed
   - Beginner and advanced density modes.
   - Pile type & height.
   - Yarn thickness using g/m or m/kg.
+  - Metric (EU) or Imperial (US) unit systems, including € / $ cost inputs.
   - Strands count, wastage factor.
   - Cost calculation:
     - Either price per kg,

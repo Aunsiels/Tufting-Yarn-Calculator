@@ -51,16 +51,26 @@
 			<div class="panel-section">
 				<h2>2. Project settings</h2>
 
+				<label class="field">
+					<span data-label="unit-system-label">Unit system</span>
+					<select id="unit-system">
+						<option value="metric" selected>EU (metric, €)</option>
+						<option value="imperial">US (imperial, $)</option>
+					</select>
+				</label>
+
 				<div class="field-group">
 					<label class="field">
-						<span>Rug width (cm)
+						<span>
+							<span data-label="rug-width-label">Rug width (cm)</span>
 							<span class="tip" tabindex="0"
 								data-tip="Real-world width of the rug’s bounding box. Used to map pixels → cm².">i</span>
 						</span>
 						<input type="number" id="rug-width" min="1" step="0.1" />
 					</label>
 					<label class="field">
-						<span>Rug height (cm)
+						<span>
+							<span data-label="rug-height-label">Rug height (cm)</span>
 							<span class="tip" tabindex="0"
 								data-tip="Real-world height of the rug’s bounding box. If your image has transparency, tufted area can be less than this box.">i</span>
 						</span>
@@ -88,7 +98,8 @@
 				</label>
 
 				<label class="field">
-					<span>Pile height (mm)
+					<span>
+						<span data-label="pile-height-label">Pile height (mm)</span>
 						<span class="tip" tabindex="0"
 							data-tip="Visible pile height above the backing after trimming. More height → more yarn.">i</span>
 					</span>
@@ -109,14 +120,17 @@
 
 				<div class="field-group advanced-only">
 					<label class="field">
-						<span>Lines per cm
+						<span>
+							<span data-label="lines-per-label">Lines per cm</span>
 							<span class="tip" tabindex="0"
 								data-tip="How many tufting lines you sew per centimeter across.">i</span>
 						</span>
 						<input type="number" id="lines-per-cm" min="0" step="0.1" />
 					</label>
 					<label class="field">
-						<span>Stitches per cm (along the line)</span>
+						<span>
+							<span data-label="stitches-per-label">Stitches per cm</span> (along the line)
+						</span>
 						<input type="number" id="stitches-per-cm" min="0" step="0.1" />
 					</label>
 				</div>
@@ -143,7 +157,8 @@
 
 				<div class="field-group">
 					<label class="field">
-						<span>Yarn weight (g per meter, single strand)
+						<span>
+							<span data-label="yarn-weight-label">Yarn weight (g per meter, single strand)</span>
 							<span class="tip" tabindex="0"
 								data-tip="If you know grams per meter, use this. Otherwise fill meters per kilogram or use the helper below.">i</span>
 						</span>
@@ -151,7 +166,8 @@
 					</label>
 					<span class="field-separator">or</span>
 					<label class="field">
-						<span>Yarn length (m per kg, single strand)
+						<span>
+							<span data-label="yarn-length-label">Yarn length (m per kg, single strand)</span>
 							<span class="tip" tabindex="0"
 								data-tip="Common on labels (e.g., 2500 m/kg). The app converts this to g/m automatically.">i</span>
 						</span>
@@ -161,16 +177,16 @@
 
 				<div class="field-group">
 					<label class="field">
-						<span>Yarn price (per kg)</span>
+						<span data-label="yarn-price-label">Yarn price (per kg)</span>
 						<input type="number" id="yarn-price-per-kg" min="0" step="0.01" placeholder="e.g. 25.00" />
 					</label>
 					<span class="field-separator">or</span>
 					<label class="field">
-						<span>Skein weight (g)</span>
+						<span data-label="skein-weight-label">Skein weight (g)</span>
 						<input type="number" id="skein-weight-g" min="0" step="1" placeholder="e.g. 100" />
 					</label>
 					<label class="field">
-						<span>Skein price</span>
+						<span data-label="skein-price-label">Skein price</span>
 						<input type="number" id="skein-price" min="0" step="0.01" placeholder="e.g. 3.90" />
 					</label>
 				</div>
@@ -194,11 +210,11 @@
 
 				<div class="row">
 					<label class="field">
-						<span>Label length (m)</span>
+						<span data-label="helper-length-label">Label length (m)</span>
 						<input type="number" id="yh-length-m" min="0" step="1" placeholder="e.g. 250" />
 					</label>
 					<label class="field">
-						<span>Label weight (g)</span>
+						<span data-label="helper-weight-label">Label weight (g)</span>
 						<input type="number" id="yh-weight-g" min="0" step="1" placeholder="e.g. 100" />
 					</label>
 					<button id="yh-apply-len-wt">Apply to fields</button>
@@ -206,7 +222,7 @@
 
 				<div class="row">
 					<label class="field">
-						<span>m per 100 g</span>
+						<span data-label="helper-mass-length-label">m per 100 g</span>
 						<input type="number" id="yh-m-per-100g" min="0" step="1" placeholder="e.g. 250" />
 					</label>
 					<button id="yh-apply-m100">Apply to fields</button>
