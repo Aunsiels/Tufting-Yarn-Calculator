@@ -2,7 +2,7 @@
 // Tiny wrapper around localStorage for settings & presets.
 
 const SETTINGS_KEY = "tyc:lastSettings:v1";
-const PRESETS_KEY  = "tyc:presets:v1";
+const PRESETS_KEY = "tyc:presets:v1";
 
 export function loadLastSettings() {
   try {
@@ -14,11 +14,11 @@ export function loadLastSettings() {
 export function saveLastSettings(settings) {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch {}
+  } catch { }
 }
 
 export function clearLastSettings() {
-  try { localStorage.removeItem(SETTINGS_KEY); } catch {}
+  try { localStorage.removeItem(SETTINGS_KEY); } catch { }
 }
 
 export function loadPresets() {
@@ -33,11 +33,11 @@ export function savePreset(name, settings) {
   const idx = presets.findIndex(p => p.name === name);
   const payload = { name, settings, savedAt: Date.now() };
   if (idx >= 0) presets[idx] = payload; else presets.push(payload);
-  try { localStorage.setItem(PRESETS_KEY, JSON.stringify(presets)); } catch {}
+  try { localStorage.setItem(PRESETS_KEY, JSON.stringify(presets)); } catch { }
 }
 
 export function deletePreset(name) {
   const presets = loadPresets().filter(p => p.name !== name);
-  try { localStorage.setItem(PRESETS_KEY, JSON.stringify(presets)); } catch {}
+  try { localStorage.setItem(PRESETS_KEY, JSON.stringify(presets)); } catch { }
 }
 

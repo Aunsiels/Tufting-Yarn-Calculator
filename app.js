@@ -1,7 +1,9 @@
 import { analyzeImage } from "./imageProcessing.js";
 import { computeYarnConstants, computeYarnForClusters } from "./calculation.js";
-import { loadLastSettings, saveLastSettings, clearLastSettings,
-	loadPresets, savePreset, deletePreset } from "./storage.js";
+import {
+	loadLastSettings, saveLastSettings, clearLastSettings,
+	loadPresets, savePreset, deletePreset
+} from "./storage.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Panels & outputs
@@ -52,18 +54,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Yarn helper elements
 	const yhLenM = document.getElementById("yh-length-m");
-	const yhWtG  = document.getElementById("yh-weight-g");
+	const yhWtG = document.getElementById("yh-weight-g");
 	const yhM100 = document.getElementById("yh-m-per-100g");
-	const yhTex  = document.getElementById("yh-tex");
+	const yhTex = document.getElementById("yh-tex");
 	const btnApplyLenWt = document.getElementById("yh-apply-len-wt");
-	const btnApplyM100  = document.getElementById("yh-apply-m100");
-	const btnApplyTex   = document.getElementById("yh-apply-tex");
+	const btnApplyM100 = document.getElementById("yh-apply-m100");
+	const btnApplyTex = document.getElementById("yh-apply-tex");
 
 	// Preview controls
 	const overlayModeEl = document.getElementById("overlay-mode");
-	const overlayDimEl  = document.getElementById("overlay-dim");
+	const overlayDimEl = document.getElementById("overlay-dim");
 	const analysisResEl = document.getElementById("analysis-resolution");
-	const legendEl      = document.getElementById("legend");
+	const legendEl = document.getElementById("legend");
 	const previewReadout = document.getElementById("preview-readout");
 
 
@@ -479,7 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		try {
 			const row = containerTbl.querySelector(`tr[data-row="${cluster}"]`);
 			row?.scrollIntoView({ block: "nearest" });
-		} catch {}
+		} catch { }
 	});
 
 	// --- Hover readout over the preview canvas ---
@@ -565,7 +567,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const gap = 10;
 
 		let left = clientX - contRect.left + gap;
-		let top  = clientY - contRect.top  + gap;
+		let top = clientY - contRect.top + gap;
 
 		// Clamp so it stays visible in the container
 		if (left + rd.width > contRect.width - 6) left = contRect.width - rd.width - 6;
@@ -574,7 +576,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (top < 6) top = 6;
 
 		previewReadout.style.left = `${Math.round(left)}px`;
-		previewReadout.style.top  = `${Math.round(top)}px`;
+		previewReadout.style.top = `${Math.round(top)}px`;
 	}
 
 	function hidePreviewReadout() {
@@ -697,7 +699,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 	mergeBtn.addEventListener("click", () => {
-		const selection = [...selectedColorIdxs].sort((a,b)=>a-b);
+		const selection = [...selectedColorIdxs].sort((a, b) => a - b);
 		if (selection.length < 2) {
 			alert("Select two or more color rows to merge.");
 			return;
@@ -750,16 +752,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	function refreshSummaryAfterManualChange() {
 		// Recompute totals from lastPerColor
-		const totalLen = lastPerColor.reduce((s,c)=>s + (c.yarnLength_m || 0), 0);
-		const totalW   = lastPerColor.reduce((s,c)=>s + (c.yarnWeightWithWaste_g || 0), 0);
-		const totalA   = lastPerColor.reduce((s,c)=>s + (c.areaCm2 || 0), 0);
-		const totalCost = lastPerColor.reduce((s,c)=> s + (c.yarnCost || 0), 0);
+		const totalLen = lastPerColor.reduce((s, c) => s + (c.yarnLength_m || 0), 0);
+		const totalW = lastPerColor.reduce((s, c) => s + (c.yarnWeightWithWaste_g || 0), 0);
+		const totalA = lastPerColor.reduce((s, c) => s + (c.areaCm2 || 0), 0);
+		const totalCost = lastPerColor.reduce((s, c) => s + (c.yarnCost || 0), 0);
 
 		// Keep previously computed pixel/area box stats if available
 		// We can derive some from the canvas if needed; simplest is to keep last known.
 		const fauxTotals = {
 			// Use what you last rendered if you kept it; otherwise keep minimal fields:
-			pixelsValid: (analysisLabels ? analysisLabels.length - (analysisLabels.filter(v=>v<0).length) : 0),
+			pixelsValid: (analysisLabels ? analysisLabels.length - (analysisLabels.filter(v => v < 0).length) : 0),
 			boxAreaCm2: (previewCanvas.width * previewCanvas.height), // not exact cm², but renderSummary handles these mostly informationally
 			areaCm2: totalA
 		};
@@ -809,10 +811,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		].join(","));
 
 		// Optional totals row
-		const totalLen = perColor.reduce((s,c)=>s + c.yarnLength_m, 0);
-		const totalW   = perColor.reduce((s,c)=>s + c.yarnWeightWithWaste_g, 0);
-		const totalA   = perColor.reduce((s,c)=>s + c.areaCm2, 0);
-		const totalCost = perColor.reduce((s,c)=>s + (c.yarnCost || 0), 0);
+		const totalLen = perColor.reduce((s, c) => s + c.yarnLength_m, 0);
+		const totalW = perColor.reduce((s, c) => s + c.yarnWeightWithWaste_g, 0);
+		const totalA = perColor.reduce((s, c) => s + c.areaCm2, 0);
+		const totalCost = perColor.reduce((s, c) => s + (c.yarnCost || 0), 0);
 
 		rows.push([
 			"TOTAL",
@@ -835,172 +837,172 @@ document.addEventListener("DOMContentLoaded", () => {
 	function csvEscape(s) {
 		if (s.includes(",") || s.includes("\"") || s.includes("\n")) {
 			return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-  }
+		}
+		return s;
+	}
 
 
-  /* ------------------------------ Presets UI ----------------------------- */
-  savePresetBtn.addEventListener("click", () => {
-    const name = (presetNameEl.value || "").trim();
-    if (!name) {
-      alert("Choose a preset name first.");
-      return;
-    }
-    const settings = serializeSettingsForPreset();
-    savePreset(name, settings);
-    populatePresetSelect();
-    alert(`Saved preset “${name}”.`);
-			});
+	/* ------------------------------ Presets UI ----------------------------- */
+	savePresetBtn.addEventListener("click", () => {
+		const name = (presetNameEl.value || "").trim();
+		if (!name) {
+			alert("Choose a preset name first.");
+			return;
+		}
+		const settings = serializeSettingsForPreset();
+		savePreset(name, settings);
+		populatePresetSelect();
+		alert(`Saved preset “${name}”.`);
+	});
 
-presetSelectEl.addEventListener("change", () => {
-	const name = presetSelectEl.value;
-	if (!name) return;
-	const presets = loadPresets();
-	const p = presets.find(x => x.name === name);
-	if (!p) return;
-	applySettings(p.settings);
-	setMode(p.settings.mode || "beginner");
-	updateModeRadios();
-	maybeAutosave();
-});
+	presetSelectEl.addEventListener("change", () => {
+		const name = presetSelectEl.value;
+		if (!name) return;
+		const presets = loadPresets();
+		const p = presets.find(x => x.name === name);
+		if (!p) return;
+		applySettings(p.settings);
+		setMode(p.settings.mode || "beginner");
+		updateModeRadios();
+		maybeAutosave();
+	});
 
-deletePresetBtn.addEventListener("click", () => {
-	const name = presetSelectEl.value;
-	if (!name) return;
-	if (!confirm(`Delete preset “${name}”?`)) return;
-	deletePreset(name);
-	populatePresetSelect();
-	presetSelectEl.value = "";
-});
+	deletePresetBtn.addEventListener("click", () => {
+		const name = presetSelectEl.value;
+		if (!name) return;
+		if (!confirm(`Delete preset “${name}”?`)) return;
+		deletePreset(name);
+		populatePresetSelect();
+		presetSelectEl.value = "";
+	});
 
-			/* -------------------------- Load on first start ------------------------ */
-			// Fill tolerance label initially
-			colorToleranceValue.textContent = colorTolerance.value;
-
-			// Load presets into dropdown
-			populatePresetSelect();
-
-			// Restore last settings if present and checkbox is checked (default checked in HTML)
-			const last = loadLastSettings();
-			if (rememberEl.checked && last) {
-				applySettings(last);
-				setMode(last.mode || "beginner");
-				updateModeRadios();
-			} else {
-				setMode("beginner");
-				updateModeRadios();
-			}
-
-/* --------------------------------- Utils -------------------------------- */
-function readForm() {
-	return {
-		mode: appState.mode,
-		rugWidthCm: num(rugWidthEl.value),
-		rugHeightCm: num(rugHeightEl.value),
-		lockAspect: !!lockAspectEl.checked,
-
-		pileType: pileTypeEl.value || "cut",
-		pileHeightMm: numDef(pileHeightEl.value, 12),
-
-		densityPreset: densityPresetEl?.value || "medium",
-		linesPerCm: num(linesPerCmEl?.value),
-		stitchesPerCm: num(stitchesPerCmEl?.value),
-
-		yarnName: yarnNameEl.value || "",
-		strands: intDef(yarnStrandsEl.value, 2),
-		yarnGPerM: posNumOrUndef(yarnGPerMEl.value),
-		yarnMPerKg: posNumOrUndef(yarnMPerKgEl.value),
-		yarnPricePerKg: posNumOrUndef(yarnPricePerKgEl.value),
-		skeinWeightG: posNumOrUndef(skeinWeightEl.value),
-		skeinPrice: posNumOrUndef(skeinPriceEl.value),
-		wastagePercent: numDef(wastagePercentEl.value, 15),
-
-		alphaThreshold: intDef(alphaThresholdEl.value, 10),
-		minAreaPercent: numDef(minAreaPercentEl.value, 0.5),
-		tolerance: intDef(colorTolerance.value, 40),
-	};
-}
-
-function applySettings(s) {
-	// Mode handled by setMode + radios
-	setVal(rugWidthEl, s.rugWidthCm);
-	setVal(rugHeightEl, s.rugHeightCm);
-
-	setVal(pileTypeEl, s.pileType);
-	setVal(pileHeightEl, s.pileHeightMm);
-
-	setVal(densityPresetEl, s.densityPreset);
-	setVal(linesPerCmEl, s.linesPerCm);
-	setVal(stitchesPerCmEl, s.stitchesPerCm);
-
-	setVal(yarnNameEl, s.yarnName);
-	setVal(yarnStrandsEl, s.strands);
-	setVal(yarnGPerMEl, s.yarnGPerM);
-	setVal(yarnMPerKgEl, s.yarnMPerKg);
-	setVal(yarnPricePerKgEl, s.yarnPricePerKg);
-	setVal(skeinWeightEl, s.skeinWeightG);
-	setVal(skeinPriceEl, s.skeinPrice);
-	setVal(wastagePercentEl, s.wastagePercent);
-
-	setVal(alphaThresholdEl, s.alphaThreshold);
-	setVal(minAreaPercentEl, s.minAreaPercent);
-	setVal(colorTolerance, s.tolerance);
+	/* -------------------------- Load on first start ------------------------ */
+	// Fill tolerance label initially
 	colorToleranceValue.textContent = colorTolerance.value;
 
-	if (typeof s.lockAspect === "boolean") {
-		lockAspectEl.checked = s.lockAspect;
+	// Load presets into dropdown
+	populatePresetSelect();
+
+	// Restore last settings if present and checkbox is checked (default checked in HTML)
+	const last = loadLastSettings();
+	if (rememberEl.checked && last) {
+		applySettings(last);
+		setMode(last.mode || "beginner");
+		updateModeRadios();
+	} else {
+		setMode("beginner");
+		updateModeRadios();
 	}
 
-}
+	/* --------------------------------- Utils -------------------------------- */
+	function readForm() {
+		return {
+			mode: appState.mode,
+			rugWidthCm: num(rugWidthEl.value),
+			rugHeightCm: num(rugHeightEl.value),
+			lockAspect: !!lockAspectEl.checked,
 
-function serializeSettingsForPreset() {
-	const s = readForm();
-	// Preset stores *everything except the image* and the remember checkbox
-	return s;
-}
+			pileType: pileTypeEl.value || "cut",
+			pileHeightMm: numDef(pileHeightEl.value, 12),
 
-function updateModeRadios() {
-	modeRadios.forEach(r => { r.checked = (r.value === appState.mode); });
-	advancedFields.forEach(el => {
-		el.style.display = appState.mode === "advanced" ? "flex" : "none";
-	});
-}
+			densityPreset: densityPresetEl?.value || "medium",
+			linesPerCm: num(linesPerCmEl?.value),
+			stitchesPerCm: num(stitchesPerCmEl?.value),
 
-function populatePresetSelect() {
-	const presets = loadPresets().sort((a, b) => a.name.localeCompare(b.name));
-	presetSelectEl.innerHTML = `<option value="">— None —</option>` +
-		presets.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join("");
-}
+			yarnName: yarnNameEl.value || "",
+			strands: intDef(yarnStrandsEl.value, 2),
+			yarnGPerM: posNumOrUndef(yarnGPerMEl.value),
+			yarnMPerKg: posNumOrUndef(yarnMPerKgEl.value),
+			yarnPricePerKg: posNumOrUndef(yarnPricePerKgEl.value),
+			skeinWeightG: posNumOrUndef(skeinWeightEl.value),
+			skeinPrice: posNumOrUndef(skeinPriceEl.value),
+			wastagePercent: numDef(wastagePercentEl.value, 15),
 
-function maybeAutosave() {
-	if (!rememberEl.checked) {
-		clearLastSettings();
-		return;
+			alphaThreshold: intDef(alphaThresholdEl.value, 10),
+			minAreaPercent: numDef(minAreaPercentEl.value, 0.5),
+			tolerance: intDef(colorTolerance.value, 40),
+		};
 	}
-	const s = readForm();
-	saveLastSettings({ ...s, mode: appState.mode });
-}
 
-// helpers
-function num(v) { return Number(v || 0); }
-function numDef(v, d) { const n = Number(v); return Number.isFinite(n) ? n : d; }
-function intDef(v, d) { const n = Math.round(Number(v)); return Number.isFinite(n) ? n : d; }
-function posNumOrUndef(v) { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : undefined; }
-function setVal(el, val) { if (!el) return; if (val === undefined || val === null) return; el.value = String(val); }
-function escapeHtml(s){ return (s??"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m])); }
+	function applySettings(s) {
+		// Mode handled by setMode + radios
+		setVal(rugWidthEl, s.rugWidthCm);
+		setVal(rugHeightEl, s.rugHeightCm);
 
-/* -------------------------- Summary/Results UI ------------------------- */
-function renderSummary(container, { clusters, totals, dropped, constants, yarn }) {
-	const fmt = (x, d = 2) => Number(x).toLocaleString(undefined, { maximumFractionDigits: d });
-	const totalColors = clusters.length;
-	const droppedInfo = dropped && dropped.length ? ` (dropped ${dropped.length} tiny group${dropped.length > 1 ? 's' : ''})` : '';
-	const totalLen = yarn?.totals?.totalLength_m ?? 0;
-	const totalW = yarn?.totals?.totalWeightWithWaste_g ?? 0;
-	const totalCost = yarn?.totals?.totalCost ?? 0;
-	const hasCost = totalCost > 0.0001;
+		setVal(pileTypeEl, s.pileType);
+		setVal(pileHeightEl, s.pileHeightMm);
 
-	container.innerHTML = `
+		setVal(densityPresetEl, s.densityPreset);
+		setVal(linesPerCmEl, s.linesPerCm);
+		setVal(stitchesPerCmEl, s.stitchesPerCm);
+
+		setVal(yarnNameEl, s.yarnName);
+		setVal(yarnStrandsEl, s.strands);
+		setVal(yarnGPerMEl, s.yarnGPerM);
+		setVal(yarnMPerKgEl, s.yarnMPerKg);
+		setVal(yarnPricePerKgEl, s.yarnPricePerKg);
+		setVal(skeinWeightEl, s.skeinWeightG);
+		setVal(skeinPriceEl, s.skeinPrice);
+		setVal(wastagePercentEl, s.wastagePercent);
+
+		setVal(alphaThresholdEl, s.alphaThreshold);
+		setVal(minAreaPercentEl, s.minAreaPercent);
+		setVal(colorTolerance, s.tolerance);
+		colorToleranceValue.textContent = colorTolerance.value;
+
+		if (typeof s.lockAspect === "boolean") {
+			lockAspectEl.checked = s.lockAspect;
+		}
+
+	}
+
+	function serializeSettingsForPreset() {
+		const s = readForm();
+		// Preset stores *everything except the image* and the remember checkbox
+		return s;
+	}
+
+	function updateModeRadios() {
+		modeRadios.forEach(r => { r.checked = (r.value === appState.mode); });
+		advancedFields.forEach(el => {
+			el.style.display = appState.mode === "advanced" ? "flex" : "none";
+		});
+	}
+
+	function populatePresetSelect() {
+		const presets = loadPresets().sort((a, b) => a.name.localeCompare(b.name));
+		presetSelectEl.innerHTML = `<option value="">— None —</option>` +
+			presets.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join("");
+	}
+
+	function maybeAutosave() {
+		if (!rememberEl.checked) {
+			clearLastSettings();
+			return;
+		}
+		const s = readForm();
+		saveLastSettings({ ...s, mode: appState.mode });
+	}
+
+	// helpers
+	function num(v) { return Number(v || 0); }
+	function numDef(v, d) { const n = Number(v); return Number.isFinite(n) ? n : d; }
+	function intDef(v, d) { const n = Math.round(Number(v)); return Number.isFinite(n) ? n : d; }
+	function posNumOrUndef(v) { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : undefined; }
+	function setVal(el, val) { if (!el) return; if (val === undefined || val === null) return; el.value = String(val); }
+	function escapeHtml(s) { return (s ?? "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[m])); }
+
+	/* -------------------------- Summary/Results UI ------------------------- */
+	function renderSummary(container, { clusters, totals, dropped, constants, yarn }) {
+		const fmt = (x, d = 2) => Number(x).toLocaleString(undefined, { maximumFractionDigits: d });
+		const totalColors = clusters.length;
+		const droppedInfo = dropped && dropped.length ? ` (dropped ${dropped.length} tiny group${dropped.length > 1 ? 's' : ''})` : '';
+		const totalLen = yarn?.totals?.totalLength_m ?? 0;
+		const totalW = yarn?.totals?.totalWeightWithWaste_g ?? 0;
+		const totalCost = yarn?.totals?.totalCost ?? 0;
+		const hasCost = totalCost > 0.0001;
+
+		container.innerHTML = `
     <p><strong>Detected colors:</strong> ${totalColors}${droppedInfo}</p>
     <p><strong>Image size:</strong> ${previewCanvas.width}×${previewCanvas.height} px
        &nbsp;|&nbsp; <strong>Valid pixels:</strong> ${fmt(totals.pixelsValid, 0)}</p>
@@ -1011,25 +1013,25 @@ function renderSummary(container, { clusters, totals, dropped, constants, yarn }
        ${hasCost ? `&nbsp;|&nbsp; ~${fmt(totalCost, 2)} €` : ""}</p>
   `;
 
-}
-
-function renderYarnTable(container, perColor) {
-	lastPerColor = perColor || [];
-
-	if (!lastPerColor.length) {
-		container.innerHTML = `<p>No color groups above the minimum area threshold.</p>`;
-		return;
 	}
 
-	const rows = lastPerColor.map((c, idx) => {
-		const pct = c.percentValid.toFixed(2);
-		const area = c.areaCm2.toFixed(2);
-		const len = c.yarnLength_m.toFixed(2);
-		const w = c.yarnWeightWithWaste_g.toFixed(1);
-		const cost = c.yarnCost ? c.yarnCost.toFixed(2) : "";
-		const name = colorNames.get(c.hex) || "";
-		const selectedClass = selectedColorIdxs.has(idx) ? " color-row-selected" : "";
-		return `
+	function renderYarnTable(container, perColor) {
+		lastPerColor = perColor || [];
+
+		if (!lastPerColor.length) {
+			container.innerHTML = `<p>No color groups above the minimum area threshold.</p>`;
+			return;
+		}
+
+		const rows = lastPerColor.map((c, idx) => {
+			const pct = c.percentValid.toFixed(2);
+			const area = c.areaCm2.toFixed(2);
+			const len = c.yarnLength_m.toFixed(2);
+			const w = c.yarnWeightWithWaste_g.toFixed(1);
+			const cost = c.yarnCost ? c.yarnCost.toFixed(2) : "";
+			const name = colorNames.get(c.hex) || "";
+			const selectedClass = selectedColorIdxs.has(idx) ? " color-row-selected" : "";
+			return `
 	<tr data-row="${idx}" class="color-row${selectedClass}">
 	  <td style="white-space:nowrap;">
 	    <span class="swatch" style="background:${c.hex}; border:1px solid #ccc; width:18px; height:18px; display:inline-block; vertical-align:middle; margin-right:8px; border-radius:3px;"></span>
@@ -1042,9 +1044,9 @@ function renderYarnTable(container, perColor) {
 	  <td style="text-align:right;">${cost}</td>
 	</tr>
       `;
-	}).join("");
+		}).join("");
 
-	container.innerHTML = `
+		container.innerHTML = `
       <div style="overflow:auto;">
 	<table id="results-table" style="width:100%; border-collapse:collapse;">
 	  <thead>
@@ -1065,417 +1067,417 @@ function renderYarnTable(container, perColor) {
       </p>
     `;
 
-	// Rebind selection behavior for table rows
-	const tbody = container.querySelector("tbody");
-	tbody.addEventListener("click", (e) => {
-		const tr = e.target.closest("tr[data-row]");
-		if (!tr) return;
-		const idx = Number(tr.getAttribute("data-row"));
+		// Rebind selection behavior for table rows
+		const tbody = container.querySelector("tbody");
+		tbody.addEventListener("click", (e) => {
+			const tr = e.target.closest("tr[data-row]");
+			if (!tr) return;
+			const idx = Number(tr.getAttribute("data-row"));
 
-		if (e.ctrlKey || e.metaKey) {
-			toggleSelectRow(tr, idx);
-		} else if (e.shiftKey) {
-			rangeSelectRow(tbody, idx);
-		} else {
-			// single selection
-			clearSelection(tbody);
-			selectRow(tr, idx);
-		}
-	});
-
-	// Keep legend’s active states in sync when table re-renders
-	refreshLegendActive();
-}
-
-
-function renderLegend(container, perColor) {
-	container.innerHTML = "";
-	if (!perColor?.length) return;
-
-	perColor.forEach((c, idx) => {
-		const item = document.createElement("div");
-		item.className = "legend-item";
-		if (selectedColorIdxs.has(idx)) item.classList.add("active");
-
-		const sw = document.createElement("span");
-		sw.className = "sw";
-		sw.style.background = c.hex;
-		const label = document.createElement("span");
-		label.textContent = (colorNames.get(c.hex) || c.hex.toUpperCase());
-
-		item.appendChild(sw);
-		item.appendChild(label);
-		item.title = `${c.hex.toUpperCase()} — ${c.percentValid.toFixed(2)}%`;
-		item.addEventListener("click", () => {
-			if (selectedColorIdxs.has(idx)) selectedColorIdxs.delete(idx);
-			else selectedColorIdxs.add(idx);
-			// Re-render legend + table selection state
-			renderLegend(container, lastPerColor);
-			const containerTbl = document.getElementById("results-colors");
-			renderYarnTable(containerTbl, lastPerColor);
-			drawOverlay();
+			if (e.ctrlKey || e.metaKey) {
+				toggleSelectRow(tr, idx);
+			} else if (e.shiftKey) {
+				rangeSelectRow(tbody, idx);
+			} else {
+				// single selection
+				clearSelection(tbody);
+				selectRow(tr, idx);
+			}
 		});
 
-		container.appendChild(item);
-	});
-	updateActionButtons();
-}
+		// Keep legend’s active states in sync when table re-renders
+		refreshLegendActive();
+	}
 
-// Re-apply active class in legend
-function refreshLegendActive() {
-	const items = legendEl.querySelectorAll(".legend-item");
-	items.forEach((el, i) => {
-		if (selectedColorIdxs.has(i)) el.classList.add("active");
-		else el.classList.remove("active");
-	});
-}
 
-function selectRow(tr, idx) {
-	selectedColorIdxs.add(idx);
-	tr.classList.add("color-row-selected");
-	refreshLegendActive();
-	drawOverlay();
-	updateActionButtons();
-}
+	function renderLegend(container, perColor) {
+		container.innerHTML = "";
+		if (!perColor?.length) return;
 
-function toggleSelectRow(tr, idx) {
-	if (selectedColorIdxs.has(idx)) {
-		selectedColorIdxs.delete(idx);
-		tr.classList.remove("color-row-selected");
-	} else {
+		perColor.forEach((c, idx) => {
+			const item = document.createElement("div");
+			item.className = "legend-item";
+			if (selectedColorIdxs.has(idx)) item.classList.add("active");
+
+			const sw = document.createElement("span");
+			sw.className = "sw";
+			sw.style.background = c.hex;
+			const label = document.createElement("span");
+			label.textContent = (colorNames.get(c.hex) || c.hex.toUpperCase());
+
+			item.appendChild(sw);
+			item.appendChild(label);
+			item.title = `${c.hex.toUpperCase()} — ${c.percentValid.toFixed(2)}%`;
+			item.addEventListener("click", () => {
+				if (selectedColorIdxs.has(idx)) selectedColorIdxs.delete(idx);
+				else selectedColorIdxs.add(idx);
+				// Re-render legend + table selection state
+				renderLegend(container, lastPerColor);
+				const containerTbl = document.getElementById("results-colors");
+				renderYarnTable(containerTbl, lastPerColor);
+				drawOverlay();
+			});
+
+			container.appendChild(item);
+		});
+		updateActionButtons();
+	}
+
+	// Re-apply active class in legend
+	function refreshLegendActive() {
+		const items = legendEl.querySelectorAll(".legend-item");
+		items.forEach((el, i) => {
+			if (selectedColorIdxs.has(i)) el.classList.add("active");
+			else el.classList.remove("active");
+		});
+	}
+
+	function selectRow(tr, idx) {
 		selectedColorIdxs.add(idx);
 		tr.classList.add("color-row-selected");
-	}
-	refreshLegendActive();
-	drawOverlay();
-	updateActionButtons();
-}
-
-function clearSelection(tbody) {
-	selectedColorIdxs.clear();
-	tbody.querySelectorAll("tr.color-row-selected").forEach(tr => tr.classList.remove("color-row-selected"));
-	refreshLegendActive();
-	drawOverlay();
-	updateActionButtons();
-}
-
-function rangeSelectRow(tbody, idx) {
-	const existing = [...selectedColorIdxs].sort((a,b)=>a-b);
-	const anchor = existing.length ? existing[existing.length-1] : idx;
-	const [lo, hi] = [Math.min(anchor, idx), Math.max(anchor, idx)];
-	clearSelection(tbody);
-	for (let i = lo; i <= hi; i++) {
-		const row = tbody.querySelector(`tr[data-row="${i}"]`);
-		if (row) selectRow(row, i);
-	}
-	updateActionButtons();
-}
-
-
-overlayModeEl.addEventListener("change", drawOverlay);
-overlayDimEl.addEventListener("input", drawOverlay);
-
-function drawOverlay() {
-	if (!baseImageData) return;
-
-	const mode = overlayModeEl.value; // none | highlight | isolate | hide
-	const dimPct = Math.max(0, Math.min(95, Number(overlayDimEl.value || 70)));
-	const dimFactor = 1 - dimPct / 100;
-
-	const ctx = previewCanvas.getContext("2d");
-	// Start from clean image
-	ctx.putImageData(baseImageData, 0, 0);
-
-	// If we have a selection and a mode != none, keep existing behavior
-	const hasSelection = selectedColorIdxs.size > 0;
-	const canHoverHighlight = (!hasSelection && mode === "none" && analysisLabels && hoverClusterIdx >= 0);
-
-	if (!analysisLabels) return;
-
-	if (!hasSelection && mode === "none" && !canHoverHighlight) {
-		// no selection, no overlay, nothing to do
-		return;
+		refreshLegendActive();
+		drawOverlay();
+		updateActionButtons();
 	}
 
-	const img = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
-	const data = img.data;
-	const labels = analysisLabels;
+	function toggleSelectRow(tr, idx) {
+		if (selectedColorIdxs.has(idx)) {
+			selectedColorIdxs.delete(idx);
+			tr.classList.remove("color-row-selected");
+		} else {
+			selectedColorIdxs.add(idx);
+			tr.classList.add("color-row-selected");
+		}
+		refreshLegendActive();
+		drawOverlay();
+		updateActionButtons();
+	}
 
-	// Safety
-	if (labels.length !== (img.width * img.height)) {
+	function clearSelection(tbody) {
+		selectedColorIdxs.clear();
+		tbody.querySelectorAll("tr.color-row-selected").forEach(tr => tr.classList.remove("color-row-selected"));
+		refreshLegendActive();
+		drawOverlay();
+		updateActionButtons();
+	}
+
+	function rangeSelectRow(tbody, idx) {
+		const existing = [...selectedColorIdxs].sort((a, b) => a - b);
+		const anchor = existing.length ? existing[existing.length - 1] : idx;
+		const [lo, hi] = [Math.min(anchor, idx), Math.max(anchor, idx)];
+		clearSelection(tbody);
+		for (let i = lo; i <= hi; i++) {
+			const row = tbody.querySelector(`tr[data-row="${i}"]`);
+			if (row) selectRow(row, i);
+		}
+		updateActionButtons();
+	}
+
+
+	overlayModeEl.addEventListener("change", drawOverlay);
+	overlayDimEl.addEventListener("input", drawOverlay);
+
+	function drawOverlay() {
+		if (!baseImageData) return;
+
+		const mode = overlayModeEl.value; // none | highlight | isolate | hide
+		const dimPct = Math.max(0, Math.min(95, Number(overlayDimEl.value || 70)));
+		const dimFactor = 1 - dimPct / 100;
+
+		const ctx = previewCanvas.getContext("2d");
+		// Start from clean image
+		ctx.putImageData(baseImageData, 0, 0);
+
+		// If we have a selection and a mode != none, keep existing behavior
+		const hasSelection = selectedColorIdxs.size > 0;
+		const canHoverHighlight = (!hasSelection && mode === "none" && analysisLabels && hoverClusterIdx >= 0);
+
+		if (!analysisLabels) return;
+
+		if (!hasSelection && mode === "none" && !canHoverHighlight) {
+			// no selection, no overlay, nothing to do
+			return;
+		}
+
+		const img = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+		const data = img.data;
+		const labels = analysisLabels;
+
+		// Safety
+		if (labels.length !== (img.width * img.height)) {
+			ctx.putImageData(img, 0, 0);
+			return;
+		}
+
+		// Hover-only dim factor (softer than the main dim)
+		const hoverDimFactor = 0.5; // 50% brightness for non-hovered pixels
+
+		// Fast membership check
+		const selected = hasSelection ? new Set(selectedColorIdxs) : null;
+
+		for (let i = 0, p = 0; i < labels.length; i++, p += 4) {
+			const lab = labels[i]; // -1 transparent/ignored
+			if (lab < 0) continue;
+
+			if (canHoverHighlight) {
+				// Dim everything except the hovered cluster
+				if (lab !== hoverClusterIdx) {
+					data[p] = Math.round(data[p] * hoverDimFactor);
+					data[p + 1] = Math.round(data[p + 1] * hoverDimFactor);
+					data[p + 2] = Math.round(data[p + 2] * hoverDimFactor);
+				}
+				continue;
+			}
+
+			// Existing overlay behaviors when there is a selection or mode != none
+			if (!hasSelection) continue;
+
+			const isSel = selected.has(lab);
+
+			if (mode === "highlight") {
+				if (!isSel) {
+					data[p] = Math.round(data[p] * dimFactor);
+					data[p + 1] = Math.round(data[p + 1] * dimFactor);
+					data[p + 2] = Math.round(data[p + 2] * dimFactor);
+				}
+			} else if (mode === "isolate") {
+				if (!isSel) {
+					data[p + 3] = Math.round(data[p + 3] * dimFactor); // fade alpha
+				}
+			} else if (mode === "hide") {
+				if (isSel) {
+					data[p + 3] = 0; // hide selected
+				}
+			}
+		}
+
 		ctx.putImageData(img, 0, 0);
-		return;
 	}
 
-	// Hover-only dim factor (softer than the main dim)
-	const hoverDimFactor = 0.5; // 50% brightness for non-hovered pixels
+	function exportToPDF() {
+		// jsPDF in UMD
+		const { jsPDF } = window.jspdf;
+		const doc = new jsPDF({ unit: "pt", format: "a4" });
+		const margin = 36; // 0.5 inch
+		const pageWidth = doc.internal.pageSize.getWidth();
+		let y = margin;
 
-	// Fast membership check
-	const selected = hasSelection ? new Set(selectedColorIdxs) : null;
+		// --- Title & meta
+		doc.setFont("helvetica", "bold");
+		doc.setFontSize(16);
+		doc.text("Tufting Yarn Estimate", margin, y);
+		doc.setFont("helvetica", "normal");
+		doc.setFontSize(10);
+		const when = new Date().toLocaleString();
+		doc.text(`Generated: ${when}`, pageWidth - margin, y, { align: "right" });
+		y += 18;
 
-	for (let i = 0, p = 0; i < labels.length; i++, p += 4) {
-		const lab = labels[i]; // -1 transparent/ignored
-		if (lab < 0) continue;
-
-		if (canHoverHighlight) {
-			// Dim everything except the hovered cluster
-			if (lab !== hoverClusterIdx) {
-				data[p]   = Math.round(data[p]   * hoverDimFactor);
-				data[p+1] = Math.round(data[p+1] * hoverDimFactor);
-				data[p+2] = Math.round(data[p+2] * hoverDimFactor);
-			}
-			continue;
+		// --- Image thumbnail (from preview canvas)
+		if (previewCanvas && previewCanvas.width && previewCanvas.height) {
+			const maxW = 240, maxH = 180;
+			const ratio = Math.min(maxW / previewCanvas.width, maxH / previewCanvas.height, 1);
+			const w = Math.round(previewCanvas.width * ratio);
+			const h = Math.round(previewCanvas.height * ratio);
+			const dataUrl = previewCanvas.toDataURL("image/png", 0.92);
+			doc.addImage(dataUrl, "PNG", margin, y, w, h);
 		}
 
-		// Existing overlay behaviors when there is a selection or mode != none
-		if (!hasSelection) continue;
+		// --- Parameters block
+		const params = readForm(); // existing helper in your app
+		const paramLines = [
+			`Mode: ${params.mode === "advanced" ? "Advanced" : "Beginner"}`,
+			`Rug size: ${fmt(params.rugWidthCm)} × ${fmt(params.rugHeightCm)} cm`,
+			`Pile: ${params.pileType}, ${fmt(params.pileHeightMm)} mm`,
+			params.mode === "advanced"
+				? `Density: ${fmt(params.linesPerCm)} lines/cm × ${fmt(params.stitchesPerCm)} stitches/cm`
+				: `Density preset: ${params.densityPreset}`,
+			`Yarn: ${params.yarnName || "—"} | Strands: ${params.strands}`,
+			params.yarnGPerM
+				? `Yarn g/m: ${fmt(params.yarnGPerM)}`
+				: params.yarnMPerKg
+					? `Yarn m/kg: ${fmt(params.yarnMPerKg)}`
+					: `Yarn spec: default (set in app)`,
+			`Wastage: ${fmt(params.wastagePercent)}%`,
+			`Tolerance: ${params.tolerance}`,
+			`Min area: ${fmt(params.minAreaPercent)}%`,
+			`Alpha <= ${params.alphaThreshold} ignored`
+		];
 
-		const isSel = selected.has(lab);
-
-		if (mode === "highlight") {
-			if (!isSel) {
-				data[p]   = Math.round(data[p]   * dimFactor);
-				data[p+1] = Math.round(data[p+1] * dimFactor);
-				data[p+2] = Math.round(data[p+2] * dimFactor);
-			}
-		} else if (mode === "isolate") {
-			if (!isSel) {
-				data[p + 3] = Math.round(data[p + 3] * dimFactor); // fade alpha
-			}
-		} else if (mode === "hide") {
-			if (isSel) {
-				data[p + 3] = 0; // hide selected
-			}
-		}
-	}
-
-	ctx.putImageData(img, 0, 0);
-}
-
-function exportToPDF() {
-	// jsPDF in UMD
-	const { jsPDF } = window.jspdf;
-	const doc = new jsPDF({ unit: "pt", format: "a4" });
-	const margin = 36; // 0.5 inch
-	const pageWidth = doc.internal.pageSize.getWidth();
-	let y = margin;
-
-	// --- Title & meta
-	doc.setFont("helvetica", "bold");
-	doc.setFontSize(16);
-	doc.text("Tufting Yarn Estimate", margin, y);
-	doc.setFont("helvetica", "normal");
-	doc.setFontSize(10);
-	const when = new Date().toLocaleString();
-	doc.text(`Generated: ${when}`, pageWidth - margin, y, { align: "right" });
-	y += 18;
-
-	// --- Image thumbnail (from preview canvas)
-	if (previewCanvas && previewCanvas.width && previewCanvas.height) {
-		const maxW = 240, maxH = 180;
-		const ratio = Math.min(maxW / previewCanvas.width, maxH / previewCanvas.height, 1);
-		const w = Math.round(previewCanvas.width * ratio);
-		const h = Math.round(previewCanvas.height * ratio);
-		const dataUrl = previewCanvas.toDataURL("image/png", 0.92);
-		doc.addImage(dataUrl, "PNG", margin, y, w, h);
-	}
-
-	// --- Parameters block
-	const params = readForm(); // existing helper in your app
-	const paramLines = [
-		`Mode: ${params.mode === "advanced" ? "Advanced" : "Beginner"}`,
-		`Rug size: ${fmt(params.rugWidthCm)} × ${fmt(params.rugHeightCm)} cm`,
-		`Pile: ${params.pileType}, ${fmt(params.pileHeightMm)} mm`,
-		params.mode === "advanced"
-		? `Density: ${fmt(params.linesPerCm)} lines/cm × ${fmt(params.stitchesPerCm)} stitches/cm`
-		: `Density preset: ${params.densityPreset}`,
-		`Yarn: ${params.yarnName || "—"} | Strands: ${params.strands}`,
-		params.yarnGPerM
-		? `Yarn g/m: ${fmt(params.yarnGPerM)}`
-		: params.yarnMPerKg
-		? `Yarn m/kg: ${fmt(params.yarnMPerKg)}`
-		: `Yarn spec: default (set in app)`,
-		`Wastage: ${fmt(params.wastagePercent)}%`,
-		`Tolerance: ${params.tolerance}`,
-		`Min area: ${fmt(params.minAreaPercent)}%`,
-		`Alpha <= ${params.alphaThreshold} ignored`
-	];
-
-	if (params.yarnPricePerKg && params.yarnPricePerKg > 0) {
-		paramLines.push(`Yarn price: ${fmt(params.yarnPricePerKg, 2)} €/kg`);
-	} else if (
-		params.skeinWeightG &&
-		params.skeinWeightG > 0 &&
-		params.skeinPrice &&
-		params.skeinPrice > 0
-	) {
-		const pricePerKg = (params.skeinPrice / params.skeinWeightG) * 1000;
-		paramLines.push(
-			`Yarn price: ${fmt(pricePerKg, 2)} €/kg (from ${params.skeinWeightG} g @ ${fmt(params.skeinPrice, 2)} €)`
-		);
-	}
-
-	const colX = margin + 260; // to the right of thumbnail
-	y += 4;
-	doc.setFont("helvetica", "bold");
-	doc.setFontSize(12);
-	doc.text("Parameters", colX, y);
-	doc.setFont("helvetica", "normal");
-	doc.setFontSize(10);
-	y += 14;
-	paramLines.forEach(line => {
-		doc.text(line, colX, y);
-		y += 12;
-	});
-
-	// --- Totals
-	const totalLen = lastPerColor.reduce((s,c)=>s + c.yarnLength_m, 0);
-	const totalW   = lastPerColor.reduce((s,c)=>s + c.yarnWeightWithWaste_g, 0);
-	const totalA   = lastPerColor.reduce((s,c)=>s + c.areaCm2, 0);
-        const totalCost = lastPerColor.reduce((s,c)=>s + (c.yarnCost || 0), 0);
-
-
-	y += 4;
-	doc.setFont("helvetica", "bold");
-	doc.text("Totals", colX, y);
-	doc.setFont("helvetica", "normal");
-	y += 14;
-	doc.text(`Area (kept colors): ${fmt(totalA,2)} cm²`, colX, y); y += 12;
-	doc.text(`Yarn length (all strands): ${fmt(totalLen,2)} m`, colX, y); y += 12;
-	doc.text(`Weight incl. wastage: ${fmt(totalW,1)} g`, colX, y); y += 12;
-	if (totalCost > 0.0001) {
-            doc.text(`Yarn cost: ~${fmt(totalCost,2)} €`, colX, y); y += 12;
-        }
-
-	// Move below image if needed
-	const belowImageY = margin + 180 + 16;
-	y = Math.max(y, belowImageY);
-
-	// --- Palette table with AutoTable
-	const rows = lastPerColor.map((c, i) => {
-		const name = colorNames.get(c.hex) || "";
-		return {
-			swatch: c.hex,                 // we'll draw the square in didDrawCell
-			color: name ? `${c.hex.toUpperCase()} (${name})` : c.hex.toUpperCase(),
-			percent: toFixed(c.percentValid, 2) + "%",
-			area: toFixed(c.areaCm2, 2),
-			yarnm: toFixed(c.yarnLength_m, 2),
-			weightg: toFixed(c.yarnWeightWithWaste_g, 1),
-			pixels: c.pixelCount.toLocaleString(),
-			cost: c.yarnCost ? toFixed(c.yarnCost, 2) : "",
-		};
-	});
-
-	doc.setFont("helvetica", "bold");
-	doc.setFontSize(12);
-	doc.text("Per-color usage", margin, y);
-	y += 8;
-
-	doc.autoTable({
-		startY: y + 6,
-		styles: { font: "helvetica", fontSize: 9, cellPadding: 4, overflow: "linebreak" },
-		headStyles: { fillColor: [37, 99, 235] },
-		columnStyles: {
-			swatch: { cellWidth: 18 } // keep the swatch column tight
-		},
-		columns: [
-			{ header: "", dataKey: "swatch" }, // no header text for the swatch
-			{ header: "Color", dataKey: "color" },
-			{ header: "% of valid", dataKey: "percent" },
-			{ header: "Area (cm²)", dataKey: "area" },
-			{ header: "Yarn (m)", dataKey: "yarnm" },
-			{ header: "Weight (g, incl. waste)", dataKey: "weightg" },
-			{ header: "Pixels", dataKey: "pixels" },
-			{ header: "Cost (€)", dataKey: "cost" }
-		],
-		body: rows,
-
-		// 1) Remove text content in the swatch cell (head + body)
-		didParseCell: (data) => {
-			if (data.column.dataKey === "swatch") {
-				data.cell.text = []; // <- hides the hex string (or any text)
-			}
-		},
-
-		// 2) Draw the color box only for body rows (guarded)
-		didDrawCell: (data) => {
-			if (data.section !== "body" || data.column.dataKey !== "swatch") return;
-
-			const hex = typeof data.cell.raw === "string" ? data.cell.raw.trim() : "";
-			const rgb = hexToRgbSafe(hex);
-			if (!rgb) return;
-
-			const { x, y, height } = data.cell;
-			const size = Math.min(12, height - 4);
-			const pad = (height - size) / 2;
-
-			doc.setDrawColor(204, 204, 204);
-			doc.setFillColor(rgb.r, rgb.g, rgb.b);
-			doc.rect(x + 4, y + pad, size, size, "FD");
-		}
-	});
-
-	// --- Footer mini-note
-	const endY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 12 : y + 24;
-	doc.setFontSize(8);
-	doc.setTextColor(120);
-	doc.text("Generated with Tufting Yarn Calculator", margin, endY);
-
-	// --- Save
-	const safeName = (params.yarnName || "project").replace(/[^\w\-]+/g, "_");
-	doc.save(`tufting_yarn_${safeName}.pdf`);
-
-	// helpers
-	function fmt(n, d = 2) {
-		const v = Number(n);
-		if (!Number.isFinite(v)) return "—";
-		return v.toLocaleString(undefined, { maximumFractionDigits: d });
-	}
-	function toFixed(n, d) {
-		const v = Number(n);
-		return Number.isFinite(v) ? v.toFixed(d) : "";
-	}
-	function hexToRgb(hex) {
-		const v = hex.replace("#",""); 
-		const r = parseInt(v.slice(0,2),16), g = parseInt(v.slice(2,4),16), b = parseInt(v.slice(4,6),16);
-		return { r, g, b };
-	}
-	function hexToRgbSafe(hex) {
-		if (typeof hex !== "string") return null;
-		let v = hex.trim();
-
-		// Allow "#rrggbb" or "rrggbb" — normalize
-		if (v.startsWith("#")) v = v.slice(1);
-
-		// Expand #rgb → #rrggbb if needed
-		if (v.length === 3) {
-			v = v.split("").map(ch => ch + ch).join("");
+		if (params.yarnPricePerKg && params.yarnPricePerKg > 0) {
+			paramLines.push(`Yarn price: ${fmt(params.yarnPricePerKg, 2)} €/kg`);
+		} else if (
+			params.skeinWeightG &&
+			params.skeinWeightG > 0 &&
+			params.skeinPrice &&
+			params.skeinPrice > 0
+		) {
+			const pricePerKg = (params.skeinPrice / params.skeinWeightG) * 1000;
+			paramLines.push(
+				`Yarn price: ${fmt(pricePerKg, 2)} €/kg (from ${params.skeinWeightG} g @ ${fmt(params.skeinPrice, 2)} €)`
+			);
 		}
 
-		// Must be exactly 6 hex chars
-		if (!/^[0-9a-fA-F]{6}$/.test(v)) return null;
+		const colX = margin + 260; // to the right of thumbnail
+		y += 4;
+		doc.setFont("helvetica", "bold");
+		doc.setFontSize(12);
+		doc.text("Parameters", colX, y);
+		doc.setFont("helvetica", "normal");
+		doc.setFontSize(10);
+		y += 14;
+		paramLines.forEach(line => {
+			doc.text(line, colX, y);
+			y += 12;
+		});
 
-		const r = parseInt(v.slice(0, 2), 16);
-		const g = parseInt(v.slice(2, 4), 16);
-		const b = parseInt(v.slice(4, 6), 16);
-		return { r, g, b };
+		// --- Totals
+		const totalLen = lastPerColor.reduce((s, c) => s + c.yarnLength_m, 0);
+		const totalW = lastPerColor.reduce((s, c) => s + c.yarnWeightWithWaste_g, 0);
+		const totalA = lastPerColor.reduce((s, c) => s + c.areaCm2, 0);
+		const totalCost = lastPerColor.reduce((s, c) => s + (c.yarnCost || 0), 0);
+
+
+		y += 4;
+		doc.setFont("helvetica", "bold");
+		doc.text("Totals", colX, y);
+		doc.setFont("helvetica", "normal");
+		y += 14;
+		doc.text(`Area (kept colors): ${fmt(totalA, 2)} cm²`, colX, y); y += 12;
+		doc.text(`Yarn length (all strands): ${fmt(totalLen, 2)} m`, colX, y); y += 12;
+		doc.text(`Weight incl. wastage: ${fmt(totalW, 1)} g`, colX, y); y += 12;
+		if (totalCost > 0.0001) {
+			doc.text(`Yarn cost: ~${fmt(totalCost, 2)} €`, colX, y); y += 12;
+		}
+
+		// Move below image if needed
+		const belowImageY = margin + 180 + 16;
+		y = Math.max(y, belowImageY);
+
+		// --- Palette table with AutoTable
+		const rows = lastPerColor.map((c, i) => {
+			const name = colorNames.get(c.hex) || "";
+			return {
+				swatch: c.hex,                 // we'll draw the square in didDrawCell
+				color: name ? `${c.hex.toUpperCase()} (${name})` : c.hex.toUpperCase(),
+				percent: toFixed(c.percentValid, 2) + "%",
+				area: toFixed(c.areaCm2, 2),
+				yarnm: toFixed(c.yarnLength_m, 2),
+				weightg: toFixed(c.yarnWeightWithWaste_g, 1),
+				pixels: c.pixelCount.toLocaleString(),
+				cost: c.yarnCost ? toFixed(c.yarnCost, 2) : "",
+			};
+		});
+
+		doc.setFont("helvetica", "bold");
+		doc.setFontSize(12);
+		doc.text("Per-color usage", margin, y);
+		y += 8;
+
+		doc.autoTable({
+			startY: y + 6,
+			styles: { font: "helvetica", fontSize: 9, cellPadding: 4, overflow: "linebreak" },
+			headStyles: { fillColor: [37, 99, 235] },
+			columnStyles: {
+				swatch: { cellWidth: 18 } // keep the swatch column tight
+			},
+			columns: [
+				{ header: "", dataKey: "swatch" }, // no header text for the swatch
+				{ header: "Color", dataKey: "color" },
+				{ header: "% of valid", dataKey: "percent" },
+				{ header: "Area (cm²)", dataKey: "area" },
+				{ header: "Yarn (m)", dataKey: "yarnm" },
+				{ header: "Weight (g, incl. waste)", dataKey: "weightg" },
+				{ header: "Pixels", dataKey: "pixels" },
+				{ header: "Cost (€)", dataKey: "cost" }
+			],
+			body: rows,
+
+			// 1) Remove text content in the swatch cell (head + body)
+			didParseCell: (data) => {
+				if (data.column.dataKey === "swatch") {
+					data.cell.text = []; // <- hides the hex string (or any text)
+				}
+			},
+
+			// 2) Draw the color box only for body rows (guarded)
+			didDrawCell: (data) => {
+				if (data.section !== "body" || data.column.dataKey !== "swatch") return;
+
+				const hex = typeof data.cell.raw === "string" ? data.cell.raw.trim() : "";
+				const rgb = hexToRgbSafe(hex);
+				if (!rgb) return;
+
+				const { x, y, height } = data.cell;
+				const size = Math.min(12, height - 4);
+				const pad = (height - size) / 2;
+
+				doc.setDrawColor(204, 204, 204);
+				doc.setFillColor(rgb.r, rgb.g, rgb.b);
+				doc.rect(x + 4, y + pad, size, size, "FD");
+			}
+		});
+
+		// --- Footer mini-note
+		const endY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 12 : y + 24;
+		doc.setFontSize(8);
+		doc.setTextColor(120);
+		doc.text("Generated with Tufting Yarn Calculator", margin, endY);
+
+		// --- Save
+		const safeName = (params.yarnName || "project").replace(/[^\w\-]+/g, "_");
+		doc.save(`tufting_yarn_${safeName}.pdf`);
+
+		// helpers
+		function fmt(n, d = 2) {
+			const v = Number(n);
+			if (!Number.isFinite(v)) return "—";
+			return v.toLocaleString(undefined, { maximumFractionDigits: d });
+		}
+		function toFixed(n, d) {
+			const v = Number(n);
+			return Number.isFinite(v) ? v.toFixed(d) : "";
+		}
+		function hexToRgb(hex) {
+			const v = hex.replace("#", "");
+			const r = parseInt(v.slice(0, 2), 16), g = parseInt(v.slice(2, 4), 16), b = parseInt(v.slice(4, 6), 16);
+			return { r, g, b };
+		}
+		function hexToRgbSafe(hex) {
+			if (typeof hex !== "string") return null;
+			let v = hex.trim();
+
+			// Allow "#rrggbb" or "rrggbb" — normalize
+			if (v.startsWith("#")) v = v.slice(1);
+
+			// Expand #rgb → #rrggbb if needed
+			if (v.length === 3) {
+				v = v.split("").map(ch => ch + ch).join("");
+			}
+
+			// Must be exactly 6 hex chars
+			if (!/^[0-9a-fA-F]{6}$/.test(v)) return null;
+
+			const r = parseInt(v.slice(0, 2), 16);
+			const g = parseInt(v.slice(2, 4), 16);
+			const b = parseInt(v.slice(4, 6), 16);
+			return { r, g, b };
+		}
+
 	}
 
-}
+	function updateActionButtons() {
+		const selectionCount = selectedColorIdxs.size;
+		// Enable Rename only when exactly one row is selected
+		renameBtn.disabled = !(selectionCount === 1);
+		// Enable Merge when 2+ rows are selected
+		mergeBtn.disabled = !(selectionCount >= 2);
+		// Enable exports when we have results
+		const hasRows = lastPerColor && lastPerColor.length > 0;
+		exportCsvBtn.disabled = !hasRows;
+		exportPdfBtn.disabled = !hasRows;
+	}
 
-function updateActionButtons() {
-	const selectionCount = selectedColorIdxs.size;
-	// Enable Rename only when exactly one row is selected
-	renameBtn.disabled = !(selectionCount === 1);
-	// Enable Merge when 2+ rows are selected
-	mergeBtn.disabled = !(selectionCount >= 2);
-	// Enable exports when we have results
-	const hasRows = lastPerColor && lastPerColor.length > 0;
-	exportCsvBtn.disabled = !hasRows;
-	exportPdfBtn.disabled = !hasRows;
-}
-
-updateActionButtons();
+	updateActionButtons();
 
 });
 

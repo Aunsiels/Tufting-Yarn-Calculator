@@ -1,354 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<title>Tufting Yarn Calculator</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<link rel="stylesheet" href="styles.css" />
-	</head>
-	<body>
-		<header class="app-header">
-			<div class="app-header-main">
-				<h1>Tufting Yarn Calculator</h1>
-				<p>Estimate yarn length and weight from your tufting design.</p>
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Tufting Yarn Calculator</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+	<header class="app-header">
+		<div class="app-header-main">
+			<h1>Tufting Yarn Calculator</h1>
+			<p>Estimate yarn length and weight from your tufting design.</p>
+		</div>
+		<div class="app-header-ads">
+	</header>
+
+	<main class="app-main">
+		<!-- LEFT: Controls -->
+		<section class="panel panel-left">
+			<!-- Mode Toggle -->
+			<div class="panel-section">
+				<h2>Mode</h2>
+				<div class="mode-toggle">
+					<label>
+						<input type="radio" name="mode" value="beginner" checked />
+						Beginner
+					</label>
+					<label>
+						<input type="radio" name="mode" value="advanced" />
+						Advanced
+					</label>
+				</div>
 			</div>
-			<div class="app-header-ads">
-		</header>
 
-		<main class="app-main">
-			<!-- LEFT: Controls -->
-			<section class="panel panel-left">
-				<!-- Mode Toggle -->
-				<div class="panel-section">
-					<h2>Mode</h2>
-					<div class="mode-toggle">
-						<label>
-							<input type="radio" name="mode" value="beginner" checked />
-							Beginner
-						</label>
-						<label>
-							<input type="radio" name="mode" value="advanced" />
-							Advanced
-						</label>
-					</div>
-				</div>
-
-				<!-- Step 1: Image -->
-				<div class="panel-section">
-					<h2>1. Design image</h2>
-					<label class="field">
-						<span>Upload image (PNG/JPG)</span>
-						<input type="file" id="image-input" accept="image/png, image/jpeg" />
-					</label>
-					<p class="hint">
+			<!-- Step 1: Image -->
+			<div class="panel-section">
+				<h2>1. Design image</h2>
+				<label class="field">
+					<span>Upload image (PNG/JPG)</span>
+					<input type="file" id="image-input" accept="image/png, image/jpeg" />
+				</label>
+				<p class="hint">
 					Tip: Use a PNG with transparent background for irregular shapes (e.g. a fox rug).
-					</p>
+				</p>
+			</div>
+
+			<!-- Step 2: Project settings -->
+			<div class="panel-section">
+				<h2>2. Project settings</h2>
+
+				<div class="field-group">
+					<label class="field">
+						<span>Rug width (cm)
+							<span class="tip" tabindex="0"
+								data-tip="Real-world width of the rug’s bounding box. Used to map pixels → cm².">i</span>
+						</span>
+						<input type="number" id="rug-width" min="1" step="0.1" />
+					</label>
+					<label class="field">
+						<span>Rug height (cm)
+							<span class="tip" tabindex="0"
+								data-tip="Real-world height of the rug’s bounding box. If your image has transparency, tufted area can be less than this box.">i</span>
+						</span>
+						<input type="number" id="rug-height" min="1" step="0.1" />
+					</label>
 				</div>
 
-				<!-- Step 2: Project settings -->
-				<div class="panel-section">
-					<h2>2. Project settings</h2>
-
-					<div class="field-group">
-						<label class="field">
-							<span>Rug width (cm)
-								<span class="tip" tabindex="0" data-tip="Real-world width of the rug’s bounding box. Used to map pixels → cm².">i</span>
-							</span>
-							<input type="number" id="rug-width" min="1" step="0.1" />
-						</label>
-						<label class="field">
-							<span>Rug height (cm)
-								<span class="tip" tabindex="0" data-tip="Real-world height of the rug’s bounding box. If your image has transparency, tufted area can be less than this box.">i</span>
-							</span>
-							<input type="number" id="rug-height" min="1" step="0.1" />
-						</label>
-					</div>
-
-					<label class="field" style="align-items:center;">
-						<input type="checkbox" id="lock-aspect" style="width:auto; margin-right:0.5rem;" />
-						<span>Keep image proportions</span>
-					</label>
-					<p class="hint">
+				<label class="field" style="align-items:center;">
+					<input type="checkbox" id="lock-aspect" style="width:auto; margin-right:0.5rem;" />
+					<span>Keep image proportions</span>
+				</label>
+				<p class="hint">
 					When enabled, changing width or height will keep the same aspect ratio as the original image.
-					</p>
+				</p>
 
+				<label class="field">
+					<span>Pile type
+						<span class="tip" tabindex="0"
+							data-tip="Cut pile trims loops at the surface; loop pile leaves loops. Loop pile typically uses slightly less yarn.">i</span>
+					</span>
+					<select id="pile-type">
+						<option value="cut" selected>Cut pile</option>
+						<option value="loop">Loop pile</option>
+					</select>
+				</label>
+
+				<label class="field">
+					<span>Pile height (mm)
+						<span class="tip" tabindex="0"
+							data-tip="Visible pile height above the backing after trimming. More height → more yarn.">i</span>
+					</span>
+					<input type="number" id="pile-height" min="1" step="1" />
+				</label>
+
+				<label class="field" data-mode="beginner">
+					<span>Density
+						<span class="tip" tabindex="0"
+							data-tip="Tuft density preset. Internally controls stitches per area. High = more stitches = more yarn.">i</span>
+					</span>
+					<select id="density-preset">
+						<option value="low">Low</option>
+						<option value="medium" selected>Medium</option>
+						<option value="high">High</option>
+					</select>
+				</label>
+
+				<div class="field-group advanced-only">
 					<label class="field">
-						<span>Pile type
-							<span class="tip" tabindex="0" data-tip="Cut pile trims loops at the surface; loop pile leaves loops. Loop pile typically uses slightly less yarn.">i</span>
+						<span>Lines per cm
+							<span class="tip" tabindex="0"
+								data-tip="How many tufting lines you sew per centimeter across.">i</span>
 						</span>
-						<select id="pile-type">
-							<option value="cut" selected>Cut pile</option>
-							<option value="loop">Loop pile</option>
-						</select>
+						<input type="number" id="lines-per-cm" min="0" step="0.1" />
 					</label>
-
 					<label class="field">
-						<span>Pile height (mm)
-							<span class="tip" tabindex="0" data-tip="Visible pile height above the backing after trimming. More height → more yarn.">i</span>
-						</span>
-						<input type="number" id="pile-height" min="1" step="1" />
+						<span>Stitches per cm (along the line)</span>
+						<input type="number" id="stitches-per-cm" min="0" step="0.1" />
 					</label>
+				</div>
+			</div>
 
-					<label class="field" data-mode="beginner">
-						<span>Density
-							<span class="tip" tabindex="0" data-tip="Tuft density preset. Internally controls stitches per area. High = more stitches = more yarn.">i</span>
+			<!-- Step 3: Yarn settings -->
+			<div class="panel-section">
+				<h2>3. Yarn settings</h2>
+				<label class="field">
+					<span>Yarn name / type
+						<span class="tip" tabindex="0"
+							data-tip="Just a label for you (e.g., brand + fiber). It does not affect math.">i</span>
+					</span>
+					<input type="text" id="yarn-name" placeholder="e.g. Acrylic 3 mm" />
+				</label>
+
+				<label class="field">
+					<span>Number of strands held together
+						<span class="tip" tabindex="0"
+							data-tip="How many yarn threads you feed into the gun at once (e.g., 2). Doubles or triples usage accordingly.">i</span>
+					</span>
+					<input type="number" id="yarn-strands" min="1" step="1" value="2" />
+				</label>
+
+				<div class="field-group">
+					<label class="field">
+						<span>Yarn weight (g per meter, single strand)
+							<span class="tip" tabindex="0"
+								data-tip="If you know grams per meter, use this. Otherwise fill meters per kilogram or use the helper below.">i</span>
 						</span>
-						<select id="density-preset">
-							<option value="low">Low</option>
-							<option value="medium" selected>Medium</option>
-							<option value="high">High</option>
-						</select>
+						<input type="number" id="yarn-g-per-m" min="0" step="0.001" />
 					</label>
-
-					<div class="field-group advanced-only">
-						<label class="field">
-							<span>Lines per cm
-								<span class="tip" tabindex="0" data-tip="How many tufting lines you sew per centimeter across.">i</span>
-							</span>
-							<input type="number" id="lines-per-cm" min="0" step="0.1" />
-						</label>
-						<label class="field">
-							<span>Stitches per cm (along the line)</span>
-							<input type="number" id="stitches-per-cm" min="0" step="0.1" />
-						</label>
-					</div>
+					<span class="field-separator">or</span>
+					<label class="field">
+						<span>Yarn length (m per kg, single strand)
+							<span class="tip" tabindex="0"
+								data-tip="Common on labels (e.g., 2500 m/kg). The app converts this to g/m automatically.">i</span>
+						</span>
+						<input type="number" id="yarn-m-per-kg" min="0" step="1" />
+					</label>
 				</div>
 
-				<!-- Step 3: Yarn settings -->
-				<div class="panel-section">
-					<h2>3. Yarn settings</h2>
+				<div class="field-group">
 					<label class="field">
-						<span>Yarn name / type
-							<span class="tip" tabindex="0" data-tip="Just a label for you (e.g., brand + fiber). It does not affect math.">i</span>
-						</span>
-						<input type="text" id="yarn-name" placeholder="e.g. Acrylic 3 mm" />
+						<span>Yarn price (per kg)</span>
+						<input type="number" id="yarn-price-per-kg" min="0" step="0.01" placeholder="e.g. 25.00" />
 					</label>
-
+					<span class="field-separator">or</span>
 					<label class="field">
-						<span>Number of strands held together
-							<span class="tip" tabindex="0" data-tip="How many yarn threads you feed into the gun at once (e.g., 2). Doubles or triples usage accordingly.">i</span>
-						</span>
-						<input type="number" id="yarn-strands" min="1" step="1" value="2" />
+						<span>Skein weight (g)</span>
+						<input type="number" id="skein-weight-g" min="0" step="1" placeholder="e.g. 100" />
 					</label>
-
-					<div class="field-group">
-						<label class="field">
-							<span>Yarn weight (g per meter, single strand)
-								<span class="tip" tabindex="0" data-tip="If you know grams per meter, use this. Otherwise fill meters per kilogram or use the helper below.">i</span>
-							</span>
-							<input type="number" id="yarn-g-per-m" min="0" step="0.001" />
-						</label>
-						<span class="field-separator">or</span>
-						<label class="field">
-							<span>Yarn length (m per kg, single strand)
-								<span class="tip" tabindex="0" data-tip="Common on labels (e.g., 2500 m/kg). The app converts this to g/m automatically.">i</span>
-							</span>
-							<input type="number" id="yarn-m-per-kg" min="0" step="1" />
-						</label>
-					</div>
-
-					<div class="field-group">
-						<label class="field">
-							<span>Yarn price (per kg)</span>
-							<input type="number" id="yarn-price-per-kg" min="0" step="0.01" placeholder="e.g. 25.00" />
-						</label>
-						<span class="field-separator">or</span>
-						<label class="field">
-							<span>Skein weight (g)</span>
-							<input type="number" id="skein-weight-g" min="0" step="1" placeholder="e.g. 100" />
-						</label>
-						<label class="field">
-							<span>Skein price</span>
-							<input type="number" id="skein-price" min="0" step="0.01" placeholder="e.g. 3.90" />
-						</label>
-					</div>
-					<p class="hint">
+					<label class="field">
+						<span>Skein price</span>
+						<input type="number" id="skein-price" min="0" step="0.01" placeholder="e.g. 3.90" />
+					</label>
+				</div>
+				<p class="hint">
 					Fill either price per kg, or skein weight + skein price. The app computes the cost automatically.
-					</p>
+				</p>
 
 
+				<label class="field">
+					<span>Wastage factor (%)
+						<span class="tip" tabindex="0"
+							data-tip="Extra yarn for color changes, starts/stops, trimming. 10–20% is typical.">i</span>
+					</span>
+					<input type="number" id="wastage-percent" min="0" max="100" step="1" value="15" />
+				</label>
+			</div>
+
+			<div class="helper" id="yarn-helper">
+				<strong>Yarn helper</strong>
+				<p class="hint">Fill any one of these rows and click “Apply to fields”.</p>
+
+				<div class="row">
 					<label class="field">
-						<span>Wastage factor (%)
-							<span class="tip" tabindex="0" data-tip="Extra yarn for color changes, starts/stops, trimming. 10–20% is typical.">i</span>
-						</span>
-						<input type="number" id="wastage-percent" min="0" max="100" step="1" value="15" />
+						<span>Label length (m)</span>
+						<input type="number" id="yh-length-m" min="0" step="1" placeholder="e.g. 250" />
 					</label>
+					<label class="field">
+						<span>Label weight (g)</span>
+						<input type="number" id="yh-weight-g" min="0" step="1" placeholder="e.g. 100" />
+					</label>
+					<button id="yh-apply-len-wt">Apply to fields</button>
 				</div>
 
-				<div class="helper" id="yarn-helper">
-					<strong>Yarn helper</strong>
-					<p class="hint">Fill any one of these rows and click “Apply to fields”.</p>
-
-					<div class="row">
-						<label class="field">
-							<span>Label length (m)</span>
-							<input type="number" id="yh-length-m" min="0" step="1" placeholder="e.g. 250" />
-						</label>
-						<label class="field">
-							<span>Label weight (g)</span>
-							<input type="number" id="yh-weight-g" min="0" step="1" placeholder="e.g. 100" />
-						</label>
-						<button id="yh-apply-len-wt">Apply to fields</button>
-					</div>
-
-					<div class="row">
-						<label class="field">
-							<span>m per 100 g</span>
-							<input type="number" id="yh-m-per-100g" min="0" step="1" placeholder="e.g. 250" />
-						</label>
-						<button id="yh-apply-m100">Apply to fields</button>
-					</div>
-
-					<div class="row">
-						<label class="field">
-							<span>Tex (g per 1000 m)</span>
-							<input type="number" id="yh-tex" min="0" step="1" placeholder="e.g. 2000" />
-						</label>
-						<button id="yh-apply-tex">Apply to fields</button>
-					</div>
+				<div class="row">
+					<label class="field">
+						<span>m per 100 g</span>
+						<input type="number" id="yh-m-per-100g" min="0" step="1" placeholder="e.g. 250" />
+					</label>
+					<button id="yh-apply-m100">Apply to fields</button>
 				</div>
 
-
-				<!-- Step 4: Color analysis -->
-				<div class="panel-section">
-					<h2>4. Color analysis</h2>
-
+				<div class="row">
 					<label class="field">
-						<span>Color tolerance
-							<span class="tip" tabindex="0" data-tip="Higher tolerance merges nearby shades into fewer colors. Lower keeps more distinct colors.">i</span>
-						</span>
-						<input type="range" id="color-tolerance" min="0" max="100" value="40" />
-						<span class="range-value" id="color-tolerance-value">40</span>
+						<span>Tex (g per 1000 m)</span>
+						<input type="number" id="yh-tex" min="0" step="1" placeholder="e.g. 2000" />
 					</label>
+					<button id="yh-apply-tex">Apply to fields</button>
+				</div>
+			</div>
 
-					<label class="field">
-						<span>Minimum color area (%)
-							<span class="tip" tabindex="0" data-tip="Ignores tiny color specks below this % of valid pixels.">i</span>
-						</span>
-						<input type="number" id="min-area-percent" min="0" max="100" step="0.1" value="0.5" />
-					</label>
 
-					<label class="field">
-						<span>Transparency threshold (0–255)
-							<span class="tip" tabindex="0" data-tip="Pixels with alpha ≤ threshold are ignored (treated as empty).">i</span>
-						</span>
-						<input type="number" id="alpha-threshold" min="0" max="255" step="1" value="10" />
-					</label>
+			<!-- Step 4: Color analysis -->
+			<div class="panel-section">
+				<h2>4. Color analysis</h2>
 
-					<button id="analyze-button" class="primary-button" disabled>
-						Analyze image
-					</button>
+				<label class="field">
+					<span>Color tolerance
+						<span class="tip" tabindex="0"
+							data-tip="Higher tolerance merges nearby shades into fewer colors. Lower keeps more distinct colors.">i</span>
+					</span>
+					<input type="range" id="color-tolerance" min="0" max="100" value="40" />
+					<span class="range-value" id="color-tolerance-value">40</span>
+				</label>
+
+				<label class="field">
+					<span>Minimum color area (%)
+						<span class="tip" tabindex="0"
+							data-tip="Ignores tiny color specks below this % of valid pixels.">i</span>
+					</span>
+					<input type="number" id="min-area-percent" min="0" max="100" step="0.1" value="0.5" />
+				</label>
+
+				<label class="field">
+					<span>Transparency threshold (0–255)
+						<span class="tip" tabindex="0"
+							data-tip="Pixels with alpha ≤ threshold are ignored (treated as empty).">i</span>
+					</span>
+					<input type="number" id="alpha-threshold" min="0" max="255" step="1" value="10" />
+				</label>
+
+				<button id="analyze-button" class="primary-button" disabled>
+					Analyze image
+				</button>
+			</div>
+
+			<!-- Step 5: Presets -->
+			<div class="panel-section">
+				<h2>5. Presets & settings</h2>
+
+				<label class="field checkbox-field">
+					<input type="checkbox" id="remember-settings" checked />
+					<span>Remember my last settings on this device</span>
+				</label>
+
+				<div class="field-group">
+					<input type="text" id="preset-name" placeholder="Preset name" />
+					<button id="save-preset-button">Save preset</button>
 				</div>
 
-				<!-- Step 5: Presets -->
-				<div class="panel-section">
-					<h2>5. Presets & settings</h2>
-
-					<label class="field checkbox-field">
-						<input type="checkbox" id="remember-settings" checked />
-						<span>Remember my last settings on this device</span>
-					</label>
-
+				<label class="field">
+					<span>Load preset</span>
 					<div class="field-group">
-						<input type="text" id="preset-name" placeholder="Preset name" />
-						<button id="save-preset-button">Save preset</button>
+						<select id="preset-select">
+							<option value="">— None —</option>
+						</select>
+						<button id="delete-preset-button">Delete</button>
 					</div>
+				</label>
 
-					<label class="field">
-						<span>Load preset</span>
-						<div class="field-group">
-							<select id="preset-select">
-								<option value="">— None —</option>
-							</select>
-							<button id="delete-preset-button">Delete</button>
-						</div>
+			</div>
+		</section>
+
+		<!-- RIGHT: Preview & Results -->
+		<section class="panel panel-right">
+
+			<div class="panel-section">
+				<h2>Preview</h2>
+
+				<div class="preview-controls">
+					<label class="field" style="min-width:180px;">
+						<span>Overlay mode</span>
+						<select id="overlay-mode">
+							<option value="none" selected>None</option>
+							<option value="highlight">Highlight selected</option>
+							<option value="isolate">Isolate selected</option>
+							<option value="hide">Hide selected</option>
+						</select>
 					</label>
 
-				</div>
-			</section>
+					<label class="field" style="min-width:140px;">
+						<span>Dim level (%)</span>
+						<input type="number" id="overlay-dim" min="0" max="95" step="5" value="70" />
+					</label>
 
-			<!-- RIGHT: Preview & Results -->
-			<section class="panel panel-right">
-
-				<div class="panel-section">
-					<h2>Preview</h2>
-
-					<div class="preview-controls">
-						<label class="field" style="min-width:180px;">
-							<span>Overlay mode</span>
-							<select id="overlay-mode">
-								<option value="none" selected>None</option>
-								<option value="highlight">Highlight selected</option>
-								<option value="isolate">Isolate selected</option>
-								<option value="hide">Hide selected</option>
-							</select>
-						</label>
-
-						<label class="field" style="min-width:140px;">
-							<span>Dim level (%)</span>
-							<input type="number" id="overlay-dim" min="0" max="95" step="5" value="70" />
-						</label>
-
-						<label class="field" style="min-width:200px;">
-							<span>Analysis resolution</span>
-							<select id="analysis-resolution">
-								<option value="auto" selected>Auto (fast)</option>
-								<option value="1">Full (1×)</option>
-								<option value="0.75">0.75×</option>
-								<option value="0.5">0.5×</option>
-								<option value="0.33">0.33×</option>
-							</select>
-						</label>
-					</div>
-
-					<div id="preview-container">
-						<canvas id="preview-canvas"></canvas>
-						<p id="preview-placeholder">No image loaded yet.</p>
-						<!-- Hover readout -->
-						<div id="preview-readout" role="status" aria-live="polite"></div>
-					</div>
-
-					<div id="legend"></div>
+					<label class="field" style="min-width:200px;">
+						<span>Analysis resolution</span>
+						<select id="analysis-resolution">
+							<option value="auto" selected>Auto (fast)</option>
+							<option value="1">Full (1×)</option>
+							<option value="0.75">0.75×</option>
+							<option value="0.5">0.5×</option>
+							<option value="0.33">0.33×</option>
+						</select>
+					</label>
 				</div>
 
-
-				<div class="panel-section">
-					<h2>Results</h2>
-
-					<div class="results-actions">
-						<button id="export-csv-button">Export CSV</button>
-						<button id="export-pdf-button">Export PDF</button>
-						<div class="merge-controls">
-							<label class="field" style="margin:0;">
-								<span>Rename selected</span>
-								<input type="text" id="rename-color-input" placeholder="e.g. Fox Orange" />
-							</label>
-							<button id="rename-color-button">Rename</button>
-							<button id="merge-colors-button" title="Merge two or more selected colors into the first selected">Merge</button>
-						</div>
-					</div>
-
-					<div id="results-summary">
-						<p>No analysis yet. Upload an image and click “Analyze image”.</p>
-					</div>
-					<div id="results-colors"></div>
+				<div id="preview-container">
+					<canvas id="preview-canvas"></canvas>
+					<p id="preview-placeholder">No image loaded yet.</p>
+					<!-- Hover readout -->
+					<div id="preview-readout" role="status" aria-live="polite"></div>
 				</div>
 
+				<div id="legend"></div>
+			</div>
 
-				<div class="panel-section">
-					<h2>Help</h2>
-					<p class="hint">
+
+			<div class="panel-section">
+				<h2>Results</h2>
+
+				<div class="results-actions">
+					<button id="export-csv-button">Export CSV</button>
+					<button id="export-pdf-button">Export PDF</button>
+					<div class="merge-controls">
+						<label class="field" style="margin:0;">
+							<span>Rename selected</span>
+							<input type="text" id="rename-color-input" placeholder="e.g. Fox Orange" />
+						</label>
+						<button id="rename-color-button">Rename</button>
+						<button id="merge-colors-button"
+							title="Merge two or more selected colors into the first selected">Merge</button>
+					</div>
+				</div>
+
+				<div id="results-summary">
+					<p>No analysis yet. Upload an image and click “Analyze image”.</p>
+				</div>
+				<div id="results-colors"></div>
+			</div>
+
+
+			<div class="panel-section">
+				<h2>Help</h2>
+				<p class="hint">
 					Hover or tap on labels to learn more about each parameter. Later we’ll add detailed
 					explanations and small “how to measure” wizards.
-					</p>
-				</div>
-			</section>
-		</main>
+				</p>
+			</div>
+		</section>
+	</main>
 
-		<!-- jsPDF + AutoTable (for PDF export) -->
-		<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
-		<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
-		<script type="module" src="app.js"></script>
-	</body>
+	<!-- jsPDF + AutoTable (for PDF export) -->
+	<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"
+		crossorigin="anonymous"></script>
+	<script type="module" src="app.js"></script>
+</body>
+
 </html>
-
