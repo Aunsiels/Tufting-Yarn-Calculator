@@ -272,9 +272,60 @@
 				</button>
 			</div>
 
-			<!-- Step 5: Presets -->
+			<!-- Step 5: Color palette -->
 			<div class="panel-section">
-				<h2>5. Presets & settings</h2>
+				<h2>5. Color palette (optional)</h2>
+				<label class="field checkbox-field">
+					<input type="checkbox" id="palette-enabled" />
+					<span>Match pixels to the palette below</span>
+				</label>
+				<p class="hint">
+					Add the yarn colors you have in stock. When enabled, the app assigns every pixel to the nearest palette
+					color instead of clustering automatically.
+				</p>
+
+				<label class="field">
+					<span>Palette name</span>
+					<input type="text" id="palette-name" placeholder="e.g. Studio wool set" />
+				</label>
+
+				<div id="palette-list" class="palette-list">
+					<p class="hint">No colors yet. Click “Add color” to build your palette.</p>
+				</div>
+				<button type="button" id="palette-add-color">Add color</button>
+
+				<div class="palette-actions">
+					<button type="button" id="palette-import-button">Import palette</button>
+					<button type="button" id="palette-export-button">Export palette</button>
+					<input type="file" id="palette-import-file" accept="application/json" hidden />
+				</div>
+
+				<label class="field">
+					<span>Load predefined palette</span>
+					<div class="field-group">
+						<select id="palette-builtin-select">
+							<option value="">— Select built-in —</option>
+						</select>
+						<button type="button" id="palette-builtin-load">Load</button>
+					</div>
+				</label>
+
+				<label class="field">
+					<span>Saved palettes</span>
+					<div class="field-group">
+						<select id="palette-select">
+							<option value="">— None —</option>
+						</select>
+						<button type="button" id="palette-save-button">Save current</button>
+						<button type="button" id="palette-delete-button">Delete</button>
+					</div>
+				</label>
+				<p class="hint">Palettes are stored locally on this device. You can also import/export JSON files to share them.</p>
+			</div>
+
+			<!-- Step 6: Presets -->
+			<div class="panel-section">
+				<h2>6. Presets & settings</h2>
 
 				<label class="field checkbox-field">
 					<input type="checkbox" id="remember-settings" checked />
@@ -333,11 +384,23 @@
 					</label>
 				</div>
 
-				<div id="preview-container">
-					<canvas id="preview-canvas"></canvas>
-					<p id="preview-placeholder">No image loaded yet.</p>
-					<!-- Hover readout -->
-					<div id="preview-readout" role="status" aria-live="polite"></div>
+				<div class="preview-panes">
+					<div class="preview-pane">
+						<h3>Original image</h3>
+						<div id="preview-container">
+							<canvas id="preview-canvas"></canvas>
+							<p id="preview-placeholder">No image loaded yet.</p>
+							<!-- Hover readout -->
+							<div id="preview-readout" role="status" aria-live="polite"></div>
+						</div>
+					</div>
+					<div class="preview-pane">
+						<h3>Palette preview</h3>
+						<div id="final-preview-container">
+							<canvas id="final-preview-canvas"></canvas>
+							<p id="final-preview-placeholder">Run the analysis to see the remapped colors.</p>
+						</div>
+					</div>
 				</div>
 
 				<div id="legend"></div>

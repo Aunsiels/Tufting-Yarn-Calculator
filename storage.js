@@ -3,6 +3,7 @@
 
 const SETTINGS_KEY = "tyc:lastSettings:v1";
 const PRESETS_KEY = "tyc:presets:v1";
+const PALETTES_KEY = "tyc:palettes:v1";
 
 export function loadLastSettings() {
   try {
@@ -41,3 +42,24 @@ export function deletePreset(name) {
   try { localStorage.setItem(PRESETS_KEY, JSON.stringify(presets)); } catch { }
 }
 
+export function loadColorPalettes() {
+  try {
+    const raw = localStorage.getItem(PALETTES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveColorPalette(name, colors) {
+  const palettes = loadColorPalettes();
+  const idx = palettes.findIndex(p => p.name === name);
+  const payload = { name, colors, savedAt: Date.now() };
+  if (idx >= 0) palettes[idx] = payload; else palettes.push(payload);
+  try { localStorage.setItem(PALETTES_KEY, JSON.stringify(palettes)); } catch { }
+}
+
+export function deleteColorPalette(name) {
+  const palettes = loadColorPalettes().filter(p => p.name !== name);
+  try { localStorage.setItem(PALETTES_KEY, JSON.stringify(palettes)); } catch { }
+}

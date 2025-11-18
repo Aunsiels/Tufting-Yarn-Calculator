@@ -151,3 +151,4 @@ function deltaE76(lab1, lab2) {
   return Math.sqrt(dL * dL + da * da + db * db);
 }
 
+export { rgbToLab, deltaE76 };

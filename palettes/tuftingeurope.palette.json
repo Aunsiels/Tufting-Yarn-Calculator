@@ -1,0 +1,213 @@
+{
+  "name": "tuftingeurope",
+  "colors": [
+    {
+      "name": "Blanc",
+      "hex": "#FFFCF5"
+    },
+    {
+      "name": "Noire",
+      "hex": "#1B191A"
+    },
+    {
+      "name": "Gris Graphite",
+      "hex": "#787773"
+    },
+    {
+      "name": "Gris foncé",
+      "hex": "#9A9E9D"
+    },
+    {
+      "name": "Gris clair",
+      "hex": "#C2C4C1"
+    },
+    {
+      "name": "Brun foncé",
+      "hex": "#635A53"
+    },
+    {
+      "name": "Marron chaud",
+      "hex": "#865A57"
+    },
+    {
+      "name": "Marron d’Érable",
+      "hex": "#865836"
+    },
+    {
+      "name": "Brun clair",
+      "hex": "#A17352"
+    },
+    {
+      "name": "Jaune Ocre",
+      "hex": "#DFA752"
+    },
+    {
+      "name": "Orange clair",
+      "hex": "#EBB883"
+    },
+    {
+      "name": "Orange",
+      "hex": "#E07E3D"
+    },
+    {
+      "name": "Orange Blast",
+      "hex": "#E5603D"
+    },
+    {
+      "name": "Fluor Rouge",
+      "hex": "#EB514F"
+    },
+    {
+      "name": "Rouge",
+      "hex": "#C13B42"
+    },
+    {
+      "name": "Rouge cerise",
+      "hex": "#9D374F"
+    },
+    {
+      "name": "Bordeaux",
+      "hex": "#6F2F47"
+    },
+    {
+      "name": "Orange Gingembre",
+      "hex": "#9B5848"
+    },
+    {
+      "name": "Saumon",
+      "hex": "#EBB899"
+    },
+    {
+      "name": "Beige pêche",
+      "hex": "#E4C0AA"
+    },
+    {
+      "name": "Beige clair",
+      "hex": "#D6B395"
+    },
+    {
+      "name": "Beige miel",
+      "hex": "#D0A270"
+    },
+    {
+      "name": "Kaki",
+      "hex": "#B8A489"
+    },
+    {
+      "name": "Vert olive",
+      "hex": "#C7C288"
+    },
+    {
+      "name": "Verte régulière",
+      "hex": "#96A15C"
+    },
+    {
+      "name": "Vert foncé",
+      "hex": "#7D8755"
+    },
+    {
+      "name": "Vert sapin",
+      "hex": "#607963"
+    },
+    {
+      "name": "Vert forêt",
+      "hex": "#415A47"
+    },
+    {
+      "name": "Vert mousse",
+      "hex": "#787154"
+    },
+    {
+      "name": "Bleu Clair Turquoise",
+      "hex": "#B5C0B2"
+    },
+    {
+      "name": "Mid Teal",
+      "hex": "#6A9D8E"
+    },
+    {
+      "name": "Bleu sarcelle",
+      "hex": "#5F928D"
+    },
+    {
+      "name": "Light Aqua",
+      "hex": "#BED2C9"
+    },
+    {
+      "name": "Turquoise",
+      "hex": "#81C0C9"
+    },
+    {
+      "name": "Bleu indigo moyen",
+      "hex": "#4C727D"
+    },
+    {
+      "name": "Super Blue",
+      "hex": "#1C7A9E"
+    },
+    {
+      "name": "Bleu clair",
+      "hex": "#8DA5A9"
+    },
+    {
+      "name": "Bleu acier",
+      "hex": "#A9BACA"
+    },
+    {
+      "name": "Bleu ciel",
+      "hex": "#869CC1"
+    },
+    {
+      "name": "Bleu moyen",
+      "hex": "#5874A3"
+    },
+    {
+      "name": "Bleu cobalt",
+      "hex": "#4B648D"
+    },
+    {
+      "name": "Bleu marine",
+      "hex": "#2D3D5E"
+    },
+    {
+      "name": "Rose clair",
+      "hex": "#E0A8B5"
+    },
+    {
+      "name": "Very Pink",
+      "hex": "#CC809E"
+    },
+    {
+      "name": "Fuchsia Rose",
+      "hex": "#D35175"
+    },
+    {
+      "name": "Rose foncé",
+      "hex": "#DE678D"
+    },
+    {
+      "name": "Violet clair",
+      "hex": "#C9B5CE"
+    },
+    {
+      "name": "Violet",
+      "hex": "#998EB6"
+    },
+    {
+      "name": "Violet foncé",
+      "hex": "#75639D"
+    },
+    {
+      "name": "Violet aubergine",
+      "hex": "#623850"
+    },
+    {
+      "name": "Jaune",
+      "hex": "#F2CF69"
+    },
+    {
+      "name": "Jaune moutarde",
+      "hex": "#EEB043"
+    }
+  ]
+}

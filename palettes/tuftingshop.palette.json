@@ -1,0 +1,281 @@
+{
+  "name": "tuftingshop",
+  "colors": [
+    {
+      "name": "Fil à touffeter en laine noire 100% sur cône (061)",
+      "hex": "#0E0E0E"
+    },
+    {
+      "name": "Antracyt Grey Fil à Tufting 100% Laine Sur Cône (1B07)",
+      "hex": "#3E3D3E"
+    },
+    {
+      "name": "Fil à tufting en laine 100% blanc sur cône (000)",
+      "hex": "#D5C6AC"
+    },
+    {
+      "name": "Fil à tufting en laine 100% sur cône (4N05)",
+      "hex": "#CBB8A1"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% écru sur cône (009)",
+      "hex": "#B29D83"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% turquoise sur cône (3A17)",
+      "hex": "#20676D"
+    },
+    {
+      "name": "Fil à tufting en laine 100% vert forêt sur cône (205)",
+      "hex": "#425D40"
+    },
+    {
+      "name": "Fil à tufting en laine 100% vert mousse sur cône (1i06)",
+      "hex": "#426A2C"
+    },
+    {
+      "name": "Sacramento Fil à Tufting 100% Laine Sur Cône (192)",
+      "hex": "#2F402F"
+    },
+    {
+      "name": "Granite vert 100% Laine Fil à Tufting Sur Cône (206)",
+      "hex": "#678673"
+    },
+    {
+      "name": "Vert Frêne 100% Laine Fil à Tufting Sur Cône (209)",
+      "hex": "#9DA88E"
+    },
+    {
+      "name": "Vert pomme 100% laine fil à tufting sur cône (1J08)",
+      "hex": "#A3AA42"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% vert néon sur cône (802c)",
+      "hex": "#8EB542"
+    },
+    {
+      "name": "Mary Jane vert 100% laine fil à tufting sur cône (153)",
+      "hex": "#789048"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% vert réfléchissant sur cône (803c)",
+      "hex": "#ADC241"
+    },
+    {
+      "name": "Mojito Fil à Tufting 100% Laine Sur Cône (169)",
+      "hex": "#B9B479"
+    },
+    {
+      "name": "Sandcastle Fil à Tufting 100% Laine Sur Cône (366)",
+      "hex": "#C39870"
+    },
+    {
+      "name": "Jaune clair / beurre 100% Laine Fil à Tufting Sur Cône (429)",
+      "hex": "#D3B57C"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% jaune lumineux sur cône (447)",
+      "hex": "#DDC360"
+    },
+    {
+      "name": "Jaune 100% Laine Fil à Tufting Sur Cône (3J01)",
+      "hex": "#E5BE3A"
+    },
+    {
+      "name": "Laine 100% Miel Fil à Tufting Sur Cône (3H04)",
+      "hex": "#E3A621"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% Mango sur cône (423)",
+      "hex": "#DF9A15"
+    },
+    {
+      "name": "Orange Fil à Tufting 100% Laine Sur Cône (313)",
+      "hex": "#E88723"
+    },
+    {
+      "name": "Laine à tufting 100% orange citrouille sur cône (2c13)",
+      "hex": "#E3652D"
+    },
+    {
+      "name": "Couleur de l'année 2024 Peach Fuzz Fil à touffeter 100% laine sur cône (2024c)",
+      "hex": "#CD784D"
+    },
+    {
+      "name": "Laine à tufting 100% laine couleur abricot clair sur cône (325)",
+      "hex": "#CE926F"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% ivoire chaud sur cône (368)",
+      "hex": "#CFAA91"
+    },
+    {
+      "name": "Fil à tufting en laine 100% ivoire pâle sur cône (499)",
+      "hex": "#CDACA0"
+    },
+    {
+      "name": "Regina rose 100% laine fil à tufter sur cône (498)",
+      "hex": "#D1A299"
+    },
+    {
+      "name": "Laine à tufting 100% en cône rose poussiéreux (336)",
+      "hex": "#B3867A"
+    },
+    {
+      "name": "Laine à tufting 100% en coquille rose sur cône (459)",
+      "hex": "#DE9699"
+    },
+    {
+      "name": "Amaranth rose 100% laine fil à tufter sur cône (517)",
+      "hex": "#C08A96"
+    },
+    {
+      "name": "Rose pink Fil à touffeter 100% laine sur cône (485)",
+      "hex": "#C8769D"
+    },
+    {
+      "name": "Candy pink Fil à Tufting 100% Laine Sur Cône (806c)",
+      "hex": "#E17991"
+    },
+    {
+      "name": "Fraise Fil à Tufting 100% Laine Sur Cône (4E08)",
+      "hex": "#E93C5A"
+    },
+    {
+      "name": "Laine 100% pour tufting en cône (805c) couleur saumon brut",
+      "hex": "#ED6859"
+    },
+    {
+      "name": "Paprika Fil à Tufting 100% Laine Sur Cône (301)",
+      "hex": "#D04314"
+    },
+    {
+      "name": "Laine à tufting 100% en cône couleur Terre de Sienne brûlée (2A11)",
+      "hex": "#A42E13"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% rouge sur cône (452)",
+      "hex": "#D51329"
+    },
+    {
+      "name": "Laine à tufting 100% indienne rouge sur cône (4D05)",
+      "hex": "#D56F6E"
+    },
+    {
+      "name": "Laine à tufting 100% laine rose poupée sur cône (BRB 1530)",
+      "hex": "#E4508B"
+    },
+    {
+      "name": "Framboise 100% Laine Fil à Tufting Sur Cône (464)",
+      "hex": "#CA346A"
+    },
+    {
+      "name": "Laine à tufting 100% laine rouge foncé sur cône (4A08)",
+      "hex": "#B80521"
+    },
+    {
+      "name": "Laine à tufting 100% rouge écarlate sur cône (4A13)",
+      "hex": "#99132E"
+    },
+    {
+      "name": "Cassis Fil à Tufting 100% Laine Sur Cône (502)",
+      "hex": "#5F2E4A"
+    },
+    {
+      "name": "Laine 100% violette pour tufting sur cône (585)",
+      "hex": "#5C4AA0"
+    },
+    {
+      "name": "Lavande Fil à Tufting 100% Laine Sur Cône (597)",
+      "hex": "#9E87A3"
+    },
+    {
+      "name": "Jordy Bleu 100% Laine Fil à Tufting Sur Cône (278)",
+      "hex": "#7B8FB1"
+    },
+    {
+      "name": "Laine à tufting 100% laine bleu pastel sur cône (218)",
+      "hex": "#8FA9AA"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% aquamarine sur cône (300)",
+      "hex": "#9CBEB1"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% bleu clair sur cône (ARS3F15)",
+      "hex": "#6AB1B4"
+    },
+    {
+      "name": "Cote d'azur 100% Laine Fil à Tufting Sur Cône (274)",
+      "hex": "#2865A5"
+    },
+    {
+      "name": "Bleu 100% Laine Fil à Tufting Sur Cône (ARS2K12)",
+      "hex": "#2856A4"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% bleu cobalt sur cône (3B15)",
+      "hex": "#06548F"
+    },
+    {
+      "name": "Atlantic blue Fil à Tufting 100% Laine Sur Cône (264)",
+      "hex": "#366086"
+    },
+    {
+      "name": "Laine 100% Navy pour Tufting sur Cône (561)",
+      "hex": "#1A1B59"
+    },
+    {
+      "name": "Indigo royal 100% laine fil à tufting sur cône (2j10)",
+      "hex": "#05154B"
+    },
+    {
+      "name": "Ombre de fougère 100% Laine Fil à Tufting Sur Cône (1I11)",
+      "hex": "#5E5910"
+    },
+    {
+      "name": "Olive branch Fil à tufting en laine 100% sur cône (381)",
+      "hex": "#88662A"
+    },
+    {
+      "name": "Vert olive 100% Laine Fil à Tufting Sur Cône (403)",
+      "hex": "#856B25"
+    },
+    {
+      "name": "Laine 100% pour Tufting Yarn sur Cône (4H11)",
+      "hex": "#392313"
+    },
+    {
+      "name": "Fil à touffeter en laine 100% marron sur cône (351)",
+      "hex": "#915E1E"
+    },
+    {
+      "name": "Moccha Mousse (couleur de l'année 2025) Fil à Tufting 100% Laine Sur Cône",
+      "hex": "#906C4C"
+    },
+    {
+      "name": "Fil à tufting en laine 100% Camel sur cône (353)",
+      "hex": "#B1780F"
+    },
+    {
+      "name": "Anchor Gris 100% Laine Fil à Tufting Sur Cône (113)",
+      "hex": "#6C7377"
+    },
+    {
+      "name": "Rhino Gris 100% Laine Fil à Tufting Sur Cône (096)",
+      "hex": "#938E8E"
+    },
+    {
+      "name": "Thunder grey Fil à Tufting 100% Laine Sur Cône (056)",
+      "hex": "#A9988B"
+    },
+    {
+      "name": "Soie grise 100% Laine Fil à Tufting Sur Cône (AD10)",
+      "hex": "#B7AB9B"
+    },
+    {
+      "name": "Cloud Fil à Tufting 100% Laine Sur Cône (110)",
+      "hex": "#BDBBBD"
+    }
+  ]
+}

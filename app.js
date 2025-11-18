@@ -1,8 +1,9 @@
-import { analyzeImage } from "./imageProcessing.js";
+import { analyzeImage, rgbToLab, deltaE76 } from "./imageProcessing.js";
 import { computeYarnConstants, computeYarnForClusters } from "./calculation.js";
 import {
 	loadLastSettings, saveLastSettings, clearLastSettings,
-	loadPresets, savePreset, deletePreset
+	loadPresets, savePreset, deletePreset,
+	loadColorPalettes, saveColorPalette, deleteColorPalette
 } from "./storage.js";
 
 const CM_PER_IN = 2.54;
@@ -164,6 +165,22 @@ document.addEventListener("DOMContentLoaded", () => {
 	const analysisResEl = document.getElementById("analysis-resolution");
 	const legendEl = document.getElementById("legend");
 	const previewReadout = document.getElementById("preview-readout");
+	const finalPreviewCanvas = document.getElementById("final-preview-canvas");
+	const finalPreviewPlaceholder = document.getElementById("final-preview-placeholder");
+
+	// Palette inputs
+	const paletteEnabledEl = document.getElementById("palette-enabled");
+	const paletteNameEl = document.getElementById("palette-name");
+	const paletteListEl = document.getElementById("palette-list");
+	const paletteAddBtn = document.getElementById("palette-add-color");
+	const paletteSelectEl = document.getElementById("palette-select");
+	const paletteSaveBtn = document.getElementById("palette-save-button");
+	const paletteDeleteBtn = document.getElementById("palette-delete-button");
+	const paletteImportBtn = document.getElementById("palette-import-button");
+	const paletteExportBtn = document.getElementById("palette-export-button");
+	const paletteImportInput = document.getElementById("palette-import-file");
+	const paletteBuiltinSelectEl = document.getElementById("palette-builtin-select");
+	const paletteBuiltinLoadBtn = document.getElementById("palette-builtin-load");
 
 
 
@@ -173,6 +190,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		imageLoaded: false,
 		imageNatural: { w: 0, h: 0 },
 	};
+	let paletteState = {
+		enabled: false,
+		name: "",
+		colors: []
+	};
+	let builtinPalettes = [];
 	// Holds the latest computed color rows for interaction (rename/merge/export)
 	let lastPerColor = [];
 	// Track user selection of color indices (by their order in lastPerColor)
@@ -247,6 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				selectedColorIdxs.clear();
 				lastRenderPayload = null;
 				renderLegend(legendEl, lastPerColor);
+				resetFinalPreview();
 			};
 			img.src = loadEvent.target.result;
 		};
@@ -268,6 +292,133 @@ document.addEventListener("DOMContentLoaded", () => {
 		wastagePercentEl, alphaThresholdEl, minAreaPercentEl,
 		rememberEl
 	].forEach(el => el && el.addEventListener("input", maybeAutosave));
+
+	paletteNameEl?.addEventListener("input", () => {
+		paletteState.name = paletteNameEl.value;
+		maybeAutosave();
+	});
+
+	paletteEnabledEl?.addEventListener("change", () => {
+		paletteState.enabled = !!paletteEnabledEl.checked;
+		maybeAutosave();
+	});
+
+	paletteAddBtn?.addEventListener("click", () => {
+		paletteState.colors.push({ name: "", hex: "#ffffff" });
+		renderPaletteEditor();
+		maybeAutosave();
+	});
+
+	paletteImportBtn?.addEventListener("click", () => {
+		paletteImportInput?.click();
+	});
+
+	paletteImportInput?.addEventListener("change", async (event) => {
+		const file = event.target.files?.[0];
+		if (!file) return;
+		try {
+			const text = await file.text();
+			const parsed = JSON.parse(text);
+			if (!parsed || !Array.isArray(parsed.colors)) throw new Error("Invalid palette file.");
+			applyPaletteDataFromSource(parsed, { autoEnable: true });
+			alert(`Loaded palette “${parsed.name || "Imported palette"}” from file.`);
+			maybeAutosave();
+		} catch (err) {
+			console.error(err);
+			alert("Could not import this palette file. Please verify it is a valid JSON export.");
+		} finally {
+			if (paletteImportInput) paletteImportInput.value = "";
+		}
+	});
+
+	paletteExportBtn?.addEventListener("click", () => {
+		const colors = getPaletteColorsForAnalysis();
+		if (!colors.length) {
+			alert("Add at least one valid color before exporting.");
+			return;
+		}
+		const payload = {
+			name: paletteState.name || "My Palette",
+			colors
+		};
+		const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+		const a = document.createElement("a");
+		a.href = URL.createObjectURL(blob);
+		const safeName = (payload.name || "palette").replace(/[^\w\-]+/g, "_");
+		a.download = `${safeName}.palette.json`;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+	});
+
+	paletteListEl?.addEventListener("input", (event) => {
+		const row = event.target.closest(".palette-row");
+		if (!row) return;
+		const idx = Number(row.dataset.index);
+		if (!Number.isFinite(idx) || idx < 0 || idx >= paletteState.colors.length) return;
+
+		if (event.target.dataset.role === "name") {
+			paletteState.colors[idx].name = event.target.value;
+		} else if (event.target.dataset.role === "hex") {
+			paletteState.colors[idx].hex = event.target.value;
+			const swatch = row.querySelector(".palette-swatch");
+			const normalized = normalizeHexForSwatch(event.target.value);
+			if (swatch) swatch.style.background = normalized || "#ffffff";
+		}
+		maybeAutosave();
+	});
+
+	paletteListEl?.addEventListener("click", (event) => {
+		const btn = event.target.closest("[data-action=\"remove\"]");
+		if (!btn) return;
+		const row = btn.closest(".palette-row");
+		if (!row) return;
+		const idx = Number(row.dataset.index);
+		if (!Number.isFinite(idx)) return;
+		paletteState.colors.splice(idx, 1);
+		renderPaletteEditor();
+		maybeAutosave();
+	});
+
+	paletteSaveBtn?.addEventListener("click", () => {
+		const name = (paletteNameEl?.value || "").trim();
+		if (!name) {
+			alert("Name the palette before saving it.");
+			return;
+		}
+		const colors = getPaletteColorsForAnalysis();
+		if (!colors.length) {
+			alert("Add at least one valid color (with a hex code) before saving.");
+			return;
+		}
+		saveColorPalette(name, colors);
+		populatePaletteSelect();
+		alert(`Saved palette “${name}”.`);
+	});
+
+	paletteSelectEl?.addEventListener("change", () => {
+		const name = paletteSelectEl.value;
+		if (!name) return;
+		const palettes = loadColorPalettes();
+		const match = palettes.find(p => p.name === name);
+		if (!match) return;
+		applyPaletteDataFromSource(match, { autoEnable: true });
+	});
+
+	paletteBuiltinLoadBtn?.addEventListener("click", () => {
+		const file = paletteBuiltinSelectEl?.value;
+		if (!file) return;
+		loadBuiltinPalette(file);
+	});
+
+	paletteDeleteBtn?.addEventListener("click", () => {
+		const name = paletteSelectEl?.value;
+		if (!name) return;
+		if (!confirm(`Delete palette “${name}”?`)) return;
+		deleteColorPalette(name);
+		populatePaletteSelect();
+		if (paletteSelectEl) paletteSelectEl.value = "";
+	});
 
 
 	/* ---------------------- Viewport-safe tooltip layer --------------------- */
@@ -463,6 +614,13 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
+		const paletteColors = params.paletteColors || [];
+		const paletteActive = !!(params.paletteEnabled && paletteColors.length);
+		if (params.paletteEnabled && !paletteColors.length) {
+			alert("Enable palette matching only after adding at least one valid color.");
+			return;
+		}
+
 		// Optionally re-draw image at a specific resolution for analysis
 		const ctx = previewCanvas.getContext("2d");
 		let restoreAfter = null;
@@ -500,7 +658,16 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 
 		const { clusters, dropped, totals, labels, size } = result;
-		analysisLabels = labels;
+		let workingClusters = clusters;
+		let remappedLabels = labels;
+		if (paletteActive) {
+			const remap = remapClustersToPalette(clusters, labels, paletteColors);
+			if (remap) {
+				workingClusters = remap.clusters;
+				remappedLabels = remap.labels;
+			}
+		}
+		analysisLabels = remappedLabels;
 		analysisSize = size;
 
 
@@ -527,13 +694,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		// 3) Yarn per color
-		const yarn = computeYarnForClusters(clusters, { ...constants, pricePerKg });
+		const yarn = computeYarnForClusters(workingClusters, { ...constants, pricePerKg });
 		// Keep interactive data
 		lastPerColor = yarn.perColor;
 		selectedColorIdxs.clear();
 
 		// 4) Render
-		const payload = { clusters, totals, dropped, constants, yarn };
+		const payload = { clusters: workingClusters, totals, dropped, constants, yarn };
 		renderSummary(resultsSummary, payload);
 		lastRenderPayload = payload;
 		renderYarnTable(resultsColors, yarn.perColor);
@@ -550,6 +717,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		renderLegend(legendEl, lastPerColor);
+		renderFinalPreviewCanvas();
 		drawOverlay(); // respect current overlay mode
 		updateActionButtons();
 
@@ -636,7 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		// (existing readout logic continues below…)
 		if (analysisLabels && lastPerColor?.length && hoverClusterIdx >= 0) {
 			const c = lastPerColor[hoverClusterIdx];
-			const name = colorNames.get(c.hex) || "";
+			const name = getColorDisplayName(c);
 			const pct = c.percentValid.toFixed(2) + "%";
 			const content = `
 	<div class="row">
@@ -693,6 +861,106 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	function hidePreviewReadout() {
 		previewReadout?.setAttribute("data-show", "false");
+	}
+
+	/* ------------------------ Palette editor helpers ---------------------- */
+	function renderPaletteEditor() {
+		if (!paletteListEl) return;
+		if (!paletteState.colors.length) {
+			paletteListEl.innerHTML = `<p class="hint">No colors yet. Click “Add color” to start a palette.</p>`;
+			return;
+		}
+
+		const rows = paletteState.colors.map((color, idx) => {
+			const safeName = escapeHtml(color.name || "");
+			const safeHex = escapeHtml(color.hex || "");
+			const swatch = normalizeHexForSwatch(color.hex) || "#ffffff";
+			return `
+	<div class="palette-row" data-index="${idx}">
+	  <span class="palette-row-index">${idx + 1}.</span>
+	  <input type="text" class="palette-row-name" data-role="name" placeholder="Color name" value="${safeName}" />
+	  <input type="text" class="palette-row-hex" data-role="hex" placeholder="#FFAA00" value="${safeHex}" />
+	  <span class="palette-swatch" style="background:${swatch};"></span>
+	  <button type="button" class="palette-row-remove" data-action="remove" aria-label="Remove color ${idx + 1}">&times;</button>
+	</div>
+      `;
+		}).join("");
+		paletteListEl.innerHTML = rows;
+	}
+
+	function populatePaletteSelect() {
+		if (!paletteSelectEl) return;
+		const palettes = loadColorPalettes().sort((a, b) => a.name.localeCompare(b.name));
+		paletteSelectEl.innerHTML = `<option value="">— None —</option>` +
+			palettes.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join("");
+	}
+
+	function getPaletteColorsForAnalysis() {
+		return paletteState.colors
+			.map((color) => {
+				const normalized = normalizeHex(color.hex || "");
+				if (!normalized) return null;
+				return {
+					name: (color.name || "").trim(),
+					hex: normalized
+				};
+			})
+			.filter(Boolean);
+	}
+
+	function normalizeHexForSwatch(value) {
+		return normalizeHex(value || "");
+	}
+
+	function applyPaletteDataFromSource(data, { autoEnable = false } = {}) {
+		paletteState.name = data?.name || "";
+		paletteState.colors = Array.isArray(data?.colors)
+			? data.colors.map(c => ({ name: c.name || "", hex: c.hex || "" }))
+			: [];
+		if (paletteNameEl) paletteNameEl.value = paletteState.name;
+		if (autoEnable) {
+			paletteState.enabled = true;
+			if (paletteEnabledEl) paletteEnabledEl.checked = true;
+		}
+		renderPaletteEditor();
+		maybeAutosave();
+	}
+
+	async function loadBuiltinPaletteIndex() {
+		if (!paletteBuiltinSelectEl) return;
+		try {
+			const res = await fetch("palettes/index.json", { cache: "no-store" });
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const list = await res.json();
+			if (Array.isArray(list)) {
+				builtinPalettes = list;
+				renderBuiltinPaletteOptions();
+			}
+		} catch (err) {
+			console.warn("Failed to load built-in palettes", err);
+		}
+	}
+
+	function renderBuiltinPaletteOptions() {
+		if (!paletteBuiltinSelectEl) return;
+		const options = builtinPalettes
+			.map(p => `<option value="${escapeHtml(p.file)}">${escapeHtml(p.name)}</option>`)
+			.join("");
+		paletteBuiltinSelectEl.innerHTML = `<option value="">— Select built-in —</option>${options}`;
+	}
+
+	async function loadBuiltinPalette(file) {
+		try {
+			const res = await fetch(`palettes/${file}`, { cache: "no-store" });
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const data = await res.json();
+			if (!data || !Array.isArray(data.colors)) throw new Error("Malformed palette file");
+			applyPaletteDataFromSource(data, { autoEnable: true });
+			alert(`Loaded predefined palette “${data.name || file}”.`);
+		} catch (err) {
+			console.error("Failed to load built-in palette", err);
+			alert("Could not load this predefined palette. Please try another one.");
+		}
 	}
 
 
@@ -797,6 +1065,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const hex = lastPerColor[idx]?.hex;
 		if (!hex) return;
 		if (name) colorNames.set(hex, name); else colorNames.delete(hex);
+		if (lastPerColor[idx]) lastPerColor[idx].name = name;
 
 		const container = document.getElementById("results-colors");
 		renderYarnTable(container, lastPerColor);
@@ -816,6 +1085,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const targetIdx = selection[0];
 		const target = lastPerColor[targetIdx];
 		if (!target) return;
+		const removedIndices = selection.slice(1);
 
 		// Merge selected sources into target (skip index 0 because it's the target)
 		for (let i = selection.length - 1; i >= 1; i--) {
@@ -842,9 +1112,11 @@ document.addEventListener("DOMContentLoaded", () => {
 			lastPerColor.splice(idx, 1);
 		}
 
+		const updatedTargetIdx = updateLabelsAfterMerge(targetIdx, removedIndices);
+
 		// Reset selection to the (now-updated) target only
 		selectedColorIdxs.clear();
-		selectedColorIdxs.add(targetIdx);
+		selectedColorIdxs.add(updatedTargetIdx);
 
 		// Re-render table + legend
 		const container = document.getElementById("results-colors");
@@ -853,6 +1125,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// Overlay & buttons
 		drawOverlay();
+		renderFinalPreviewCanvas();
 		updateActionButtons();
 
 		// Refresh the summary totals to reflect the merged rows
@@ -919,7 +1192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		const rows = perColor.map(c => [
 			c.hex,
-			csvEscape(colorNames.get(c.hex) || ""),
+			csvEscape(getColorDisplayName(c) || ""),
 			numFmt(c.percentValid, 2),
 			numFmt(convertMetricToDisplay("area", c.areaCm2), 2),
 			numFmt(convertMetricToDisplay("yarnTotalLength", c.yarnLength_m), 2),
@@ -998,6 +1271,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Fill tolerance label initially
 	colorToleranceValue.textContent = colorTolerance.value;
 
+	// Palette UI defaults
+	renderPaletteEditor();
+	populatePaletteSelect();
+	resetFinalPreview();
+	loadBuiltinPaletteIndex();
+
 	// Load presets into dropdown
 	populatePresetSelect();
 
@@ -1050,6 +1329,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			alphaThreshold: intDef(alphaThresholdEl.value, 10),
 			minAreaPercent: numDef(minAreaPercentEl.value, 0.5),
 			tolerance: intDef(colorTolerance.value, 40),
+
+			paletteEnabled: !!paletteState.enabled,
+			paletteName: paletteState.name || "",
+			paletteColors: getPaletteColorsForAnalysis()
 		};
 	}
 
@@ -1085,6 +1368,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (typeof s.lockAspect === "boolean") {
 			lockAspectEl.checked = s.lockAspect;
 		}
+
+		paletteState.enabled = !!s.paletteEnabled;
+		paletteState.name = s.paletteName || "";
+		paletteState.colors = Array.isArray(s.paletteColors)
+			? s.paletteColors.map(c => ({ name: c.name || "", hex: c.hex || "" }))
+			: [];
+		if (paletteEnabledEl) paletteEnabledEl.checked = paletteState.enabled;
+		if (paletteNameEl) paletteNameEl.value = paletteState.name;
+		renderPaletteEditor();
 
 	}
 
@@ -1123,6 +1415,172 @@ document.addEventListener("DOMContentLoaded", () => {
 	function posNumOrUndef(v) { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : undefined; }
 	function setVal(el, val) { if (!el) return; if (val === undefined || val === null) return; el.value = String(val); }
 	function escapeHtml(s) { return (s ?? "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[m])); }
+
+	function normalizeHex(value) {
+		if (typeof value !== "string") return null;
+		let v = value.trim();
+		if (!v) return null;
+		if (v.startsWith("#")) v = v.slice(1);
+		if (v.length === 3 && /^[0-9a-fA-F]{3}$/.test(v)) {
+			v = v.split("").map(ch => ch + ch).join("");
+		}
+		if (!/^[0-9a-fA-F]{6}$/.test(v)) return null;
+		return `#${v.toUpperCase()}`;
+	}
+
+	function hexToRgbArray(hex) {
+		const normalized = normalizeHex(hex);
+		if (!normalized) return null;
+		const v = normalized.slice(1);
+		return [
+			parseInt(v.slice(0, 2), 16),
+			parseInt(v.slice(2, 4), 16),
+			parseInt(v.slice(4, 6), 16)
+		];
+	}
+
+	function remapClustersToPalette(clusters, labels, paletteColors) {
+		if (!clusters?.length || !Array.isArray(paletteColors) || !paletteColors.length) {
+			return null;
+		}
+		const paletteEntries = paletteColors
+			.map((color, idx) => {
+				const rgb = hexToRgbArray(color.hex);
+				if (!rgb) return null;
+				return {
+					index: idx,
+					name: color.name || "",
+					hex: normalizeHex(color.hex),
+					rgb,
+					lab: rgbToLab(rgb[0], rgb[1], rgb[2])
+				};
+			})
+			.filter(Boolean);
+		if (!paletteEntries.length) return null;
+
+		const aggregateByPalette = new Map();
+
+		clusters.forEach((cluster, idx) => {
+			const rgb = hexToRgbArray(cluster.hex);
+			if (!rgb) return;
+			const lab = rgbToLab(rgb[0], rgb[1], rgb[2]);
+			let bestEntry = null;
+			let bestDist = Infinity;
+			for (const entry of paletteEntries) {
+				const dist = deltaE76(lab, entry.lab);
+				if (dist < bestDist) {
+					bestDist = dist;
+					bestEntry = entry;
+				}
+			}
+			if (!bestEntry) return;
+			if (!aggregateByPalette.has(bestEntry.index)) {
+				aggregateByPalette.set(bestEntry.index, {
+					paletteIndex: bestEntry.index,
+					name: bestEntry.name,
+					hex: bestEntry.hex,
+					rgb: bestEntry.rgb,
+					pixelCount: 0,
+					percentValid: 0,
+					areaCm2: 0,
+					clusters: []
+				});
+			}
+			const agg = aggregateByPalette.get(bestEntry.index);
+			agg.pixelCount += cluster.pixelCount || 0;
+			agg.percentValid += cluster.percentValid || 0;
+			agg.areaCm2 += cluster.areaCm2 || 0;
+			agg.clusters.push(idx);
+		});
+
+		if (!aggregateByPalette.size) {
+			return null;
+		}
+
+		const aggregated = Array.from(aggregateByPalette.values()).sort((a, b) => b.pixelCount - a.pixelCount);
+		const clusterToAggIdx = new Array(clusters.length).fill(-1);
+		aggregated.forEach((agg, aggIdx) => {
+			agg.clusters.forEach(clusterIdx => {
+				clusterToAggIdx[clusterIdx] = aggIdx;
+			});
+		});
+
+		const remappedLabels = labels ? new Int16Array(labels.length) : null;
+		if (labels && remappedLabels) {
+			for (let i = 0; i < labels.length; i++) {
+				const orig = labels[i];
+				if (orig < 0) {
+					remappedLabels[i] = -1;
+				} else {
+					remappedLabels[i] = clusterToAggIdx[orig] ?? -1;
+				}
+			}
+		}
+
+		const remappedClusters = aggregated.map((agg, aggIdx) => ({
+			id: aggIdx,
+			rgb: agg.rgb,
+			hex: agg.hex,
+			name: agg.name || "",
+			pixelCount: agg.pixelCount,
+			percentValid: agg.percentValid,
+			areaCm2: agg.areaCm2
+		}));
+
+		return {
+			clusters: remappedClusters,
+			labels: remappedLabels ?? labels
+		};
+	}
+
+	function updateLabelsAfterMerge(targetIdx, removedIdxs) {
+		if (!analysisLabels || !removedIdxs?.length) return targetIdx;
+		const sortedRemoved = [...removedIdxs].sort((a, b) => a - b);
+		const removedSet = new Set(sortedRemoved);
+		const shiftCache = new Map();
+
+		const targetShift = countRemovedBefore(targetIdx, sortedRemoved);
+		const newTargetIdx = targetIdx - targetShift;
+
+		for (let i = 0; i < analysisLabels.length; i++) {
+			const current = analysisLabels[i];
+			if (current < 0) continue;
+
+			if (removedSet.has(current)) {
+				analysisLabels[i] = newTargetIdx;
+				continue;
+			}
+
+			let shift = shiftCache.get(current);
+			if (shift === undefined) {
+				shift = countRemovedBefore(current, sortedRemoved);
+				shiftCache.set(current, shift);
+			}
+
+			if (shift > 0) {
+				analysisLabels[i] = current - shift;
+			}
+		}
+
+		return newTargetIdx;
+	}
+
+	function countRemovedBefore(value, sortedRemoved) {
+		let count = 0;
+		for (let i = 0; i < sortedRemoved.length; i++) {
+			if (sortedRemoved[i] < value) count++; else break;
+		}
+		return count;
+	}
+
+	function getColorDisplayName(color) {
+		if (!color) return "";
+		const hex = typeof color.hex === "string" ? color.hex : "";
+		const custom = hex && colorNames.has(hex) ? colorNames.get(hex) : "";
+		if (custom) return custom;
+		const direct = typeof color.name === "string" ? color.name.trim() : "";
+		return direct;
+	}
 
 	function getCurrentUnitSystemKey() {
 		const key = appState.unitSystem || DEFAULT_UNIT_SYSTEM;
@@ -1320,7 +1778,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			const len = formatValueForDisplay(c.yarnLength_m, "yarnTotalLength");
 			const w = formatValueForDisplay(c.yarnWeightWithWaste_g, "yarnWeightResult");
 			const cost = c.yarnCost ? Number(c.yarnCost).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "";
-			const name = colorNames.get(c.hex) || "";
+			const name = getColorDisplayName(c);
 			const selectedClass = selectedColorIdxs.has(idx) ? " color-row-selected" : "";
 			return `
 	<tr data-row="${idx}" class="color-row${selectedClass}">
@@ -1394,7 +1852,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			sw.className = "sw";
 			sw.style.background = c.hex;
 			const label = document.createElement("span");
-			label.textContent = (colorNames.get(c.hex) || c.hex.toUpperCase());
+			const displayName = getColorDisplayName(c);
+			label.textContent = displayName || c.hex.toUpperCase();
 
 			item.appendChild(sw);
 			item.appendChild(label);
@@ -1467,6 +1926,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	overlayModeEl.addEventListener("change", drawOverlay);
 	overlayDimEl.addEventListener("input", drawOverlay);
+
+	function resetFinalPreview() {
+		if (!finalPreviewCanvas || !finalPreviewPlaceholder) return;
+		finalPreviewCanvas.width = 0;
+		finalPreviewCanvas.height = 0;
+		finalPreviewCanvas.style.display = "none";
+		finalPreviewPlaceholder.style.display = "block";
+	}
+
+	function renderFinalPreviewCanvas() {
+		if (!finalPreviewCanvas || !finalPreviewPlaceholder) return;
+		if (!analysisLabels || !lastPerColor?.length || !analysisSize.width || !analysisSize.height) {
+			resetFinalPreview();
+			return;
+		}
+
+		const ctx = finalPreviewCanvas.getContext("2d");
+		finalPreviewCanvas.width = analysisSize.width;
+		finalPreviewCanvas.height = analysisSize.height;
+		const image = ctx.createImageData(analysisSize.width, analysisSize.height);
+		const colors = lastPerColor.map(c => hexToRgbArray(c.hex));
+		for (let i = 0, p = 0; i < analysisLabels.length; i++, p += 4) {
+			const label = analysisLabels[i];
+			const rgb = label >= 0 ? colors[label] : null;
+			if (!rgb) {
+				image.data[p] = 0;
+				image.data[p + 1] = 0;
+				image.data[p + 2] = 0;
+				image.data[p + 3] = 0;
+				continue;
+			}
+			image.data[p] = rgb[0];
+			image.data[p + 1] = rgb[1];
+			image.data[p + 2] = rgb[2];
+			image.data[p + 3] = 255;
+		}
+		ctx.putImageData(image, 0, 0);
+		finalPreviewCanvas.style.display = "block";
+		finalPreviewPlaceholder.style.display = "none";
+	}
 
 	function drawOverlay() {
 		if (!baseImageData) return;
@@ -1563,14 +2062,24 @@ document.addEventListener("DOMContentLoaded", () => {
 		doc.text(`Generated: ${when}`, pageWidth - margin, y, { align: "right" });
 		y += 18;
 
-		// --- Image thumbnail (from preview canvas)
-		if (previewCanvas && previewCanvas.width && previewCanvas.height) {
-			const maxW = 240, maxH = 180;
-			const ratio = Math.min(maxW / previewCanvas.width, maxH / previewCanvas.height, 1);
-			const w = Math.round(previewCanvas.width * ratio);
-			const h = Math.round(previewCanvas.height * ratio);
-			const dataUrl = previewCanvas.toDataURL("image/png", 0.92);
-			doc.addImage(dataUrl, "PNG", margin, y, w, h);
+		// --- Image thumbnails (original + palette preview)
+		const previewThumb = getCanvasThumb(previewCanvas);
+		const paletteThumb = getCanvasThumb(finalPreviewCanvas);
+		let lastImageBottom = y;
+		if (previewThumb) {
+			doc.setFont("helvetica", "bold");
+			doc.setFontSize(10);
+			doc.text("Original image", margin, y - 4);
+			doc.addImage(previewThumb.dataUrl, "PNG", margin, y, previewThumb.w, previewThumb.h);
+			lastImageBottom = y + previewThumb.h;
+		}
+		if (paletteThumb) {
+			const paletteY = previewThumb ? lastImageBottom + 24 : y;
+			doc.setFont("helvetica", "bold");
+			doc.setFontSize(10);
+			doc.text("Palette preview", margin, paletteY - 4);
+			doc.addImage(paletteThumb.dataUrl, "PNG", margin, paletteY, paletteThumb.w, paletteThumb.h);
+			lastImageBottom = paletteY + paletteThumb.h;
 		}
 
 		// --- Parameters block
@@ -1602,6 +2111,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			`Min area: ${fmt(params.minAreaPercent)}%`,
 			`Alpha <= ${params.alphaThreshold} ignored`
 		];
+		if (params.paletteEnabled && params.paletteColors?.length) {
+			paramLines.push(`Palette: ${(params.paletteName || "Custom palette")} (${params.paletteColors.length} colors)`);
+		}
 
 		if (params.yarnPricePerKg && params.yarnPricePerKg > 0) {
 			paramLines.push(`Yarn price: ${currencySymbol}${fmtDisplay(params.yarnPricePerKg, "pricePerMass")} ${priceUnit}`);
@@ -1650,12 +2162,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		// Move below image if needed
-		const belowImageY = margin + 180 + 16;
+		const belowImageY = (previewThumb || paletteThumb) ? (lastImageBottom + 16) : (margin + 16);
 		y = Math.max(y, belowImageY);
 
 		// --- Palette table with AutoTable
 		const rows = lastPerColor.map((c, i) => {
-			const name = colorNames.get(c.hex) || "";
+			const name = getColorDisplayName(c) || "";
 			return {
 				swatch: c.hex,                 // we'll draw the square in didDrawCell
 				color: name ? `${c.hex.toUpperCase()} (${name})` : c.hex.toUpperCase(),
@@ -1760,6 +2272,16 @@ document.addEventListener("DOMContentLoaded", () => {
 			const g = parseInt(v.slice(2, 4), 16);
 			const b = parseInt(v.slice(4, 6), 16);
 			return { r, g, b };
+		}
+
+		function getCanvasThumb(canvas) {
+			if (!canvas || !canvas.width || !canvas.height) return null;
+			const maxW = 240, maxH = 180;
+			const ratio = Math.min(maxW / canvas.width, maxH / canvas.height, 1);
+			const w = Math.round(canvas.width * ratio);
+			const h = Math.round(canvas.height * ratio);
+			const dataUrl = canvas.toDataURL("image/png", 0.92);
+			return { w, h, dataUrl };
 		}
 
 	}
