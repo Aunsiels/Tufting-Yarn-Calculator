@@ -57,8 +57,8 @@ const UNIT_CONVERSIONS = {
 		imperial: { toMetric: (v) => (v * M_PER_YD) / KG_PER_LB, fromMetric: (v) => (v * KG_PER_LB) / M_PER_YD, label: "yd per lb", decimals: 0, csv: "yd_per_lb" }
 	},
 	area: {
-		metric: { fromMetric: (v) => v, label: "cm²", decimals: 2, csv: "cm2" },
-		imperial: { fromMetric: (v) => v / CM2_PER_FT2, label: "ft²", decimals: 2, csv: "ft2" }
+		metric: { toMetric: (v) => v, fromMetric: (v) => v, label: "cm²", decimals: 2, csv: "cm2" },
+		imperial: { toMetric: (v) => v * CM2_PER_FT2, fromMetric: (v) => v / CM2_PER_FT2, label: "ft²", decimals: 2, csv: "ft2" }
 	},
 	yarnTotalLength: {
 		metric: { fromMetric: (v) => v, label: "m", decimals: 2, csv: "m" },
@@ -95,7 +95,8 @@ const LABEL_TEXT = {
 	"skein-price-label": { metric: "Skein price (€)", imperial: "Skein price ($)" },
 	"helper-length-label": { metric: "Label length (m)", imperial: "Label length (yd)" },
 	"helper-weight-label": { metric: "Label weight (g)", imperial: "Label weight (oz)" },
-	"helper-mass-length-label": { metric: "m per 100 g", imperial: "yd per lb" }
+	"helper-mass-length-label": { metric: "m per 100 g", imperial: "yd per lb" },
+	"min-area-label": { metric: "Minimum color area (cm²)", imperial: "Minimum color area (ft²)" }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -141,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Analysis inputs
 	const alphaThresholdEl = document.getElementById("alpha-threshold");
-	const minAreaPercentEl = document.getElementById("min-area-percent");
+	const minAreaEl = document.getElementById("min-area");
 
 	// Persistence UI
 	const rememberEl = document.getElementById("remember-settings");
@@ -289,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		densityPresetEl, linesPerCmEl, stitchesPerCmEl,
 		yarnNameEl, yarnStrandsEl, yarnGPerMEl, yarnMPerKgEl,
 		yarnPricePerKgEl, skeinWeightEl, skeinPriceEl,
-		wastagePercentEl, alphaThresholdEl, minAreaPercentEl,
+		wastagePercentEl, alphaThresholdEl, minAreaEl,
 		rememberEl
 	].forEach(el => el && el.addEventListener("input", maybeAutosave));
 
@@ -652,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const result = analyzeImage(previewCanvas, {
 			alphaThreshold: params.alphaThreshold,
 			tolerance: params.tolerance,
-			minAreaPercent: params.minAreaPercent,
+			minAreaCm2: params.minAreaCm2,
 			rugWidthCm: params.rugWidthCm,
 			rugHeightCm: params.rugHeightCm,
 		});
@@ -1302,6 +1303,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		const yarnMPerKgInput = posNumOrUndef(yarnMPerKgEl.value);
 		const yarnPriceInput = posNumOrUndef(yarnPricePerKgEl.value);
 		const skeinWeightInput = posNumOrUndef(skeinWeightEl.value);
+		const minAreaInput = numDef(minAreaEl?.value, 0.5);
 
 		return {
 			mode: appState.mode,
@@ -1327,13 +1329,28 @@ document.addEventListener("DOMContentLoaded", () => {
 			wastagePercent: numDef(wastagePercentEl.value, 15),
 
 			alphaThreshold: intDef(alphaThresholdEl.value, 10),
-			minAreaPercent: numDef(minAreaPercentEl.value, 0.5),
+			minAreaCm2: convertDisplayToMetric("area", minAreaInput),
 			tolerance: intDef(colorTolerance.value, 40),
 
 			paletteEnabled: !!paletteState.enabled,
 			paletteName: paletteState.name || "",
 			paletteColors: getPaletteColorsForAnalysis()
 		};
+	}
+
+	function resolveMinAreaFromSettings(settings) {
+		if (!settings) return undefined;
+		if (Number.isFinite(settings.minAreaCm2)) return settings.minAreaCm2;
+		const percent = Number(settings.minAreaPercent);
+		if (Number.isFinite(percent) && percent >= 0) {
+			if (percent === 0) return 0;
+			const width = Math.max(0, Number(settings.rugWidthCm));
+			const height = Math.max(0, Number(settings.rugHeightCm));
+			if (width > 0 && height > 0) {
+				return (percent / 100) * width * height;
+			}
+		}
+		return undefined;
 	}
 
 	function applySettings(s) {
@@ -1361,7 +1378,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		setVal(wastagePercentEl, s.wastagePercent);
 
 		setVal(alphaThresholdEl, s.alphaThreshold);
-		setVal(minAreaPercentEl, s.minAreaPercent);
+		const minAreaMetric = resolveMinAreaFromSettings(s);
+		setFieldFromMetric(minAreaEl, minAreaMetric ?? 0.5, "area");
 		setVal(colorTolerance, s.tolerance);
 		colorToleranceValue.textContent = colorTolerance.value;
 
@@ -1678,7 +1696,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			{ el: skeinWeightEl, type: "skeinWeight" },
 			{ el: yhLenM, type: "helperLength" },
 			{ el: yhWtG, type: "helperWeight" },
-			{ el: yhM100, type: "helperLengthPerMass" }
+			{ el: yhM100, type: "helperLengthPerMass" },
+			{ el: minAreaEl, type: "area" }
 		];
 		fields.forEach(({ el, type }) => convertFieldValueBetweenSystems(el, type, fromSystem, toSystem));
 	}
@@ -2108,7 +2127,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					: `Yarn spec: default (set in app)`,
 			`Wastage: ${fmt(params.wastagePercent)}%`,
 			`Tolerance: ${params.tolerance}`,
-			`Min area: ${fmt(params.minAreaPercent)}%`,
+			`Min area: ${fmtDisplay(params.minAreaCm2, "area")} ${areaLabel}`,
 			`Alpha <= ${params.alphaThreshold} ignored`
 		];
 		if (params.paletteEnabled && params.paletteColors?.length) {

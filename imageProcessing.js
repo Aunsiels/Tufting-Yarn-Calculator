@@ -3,7 +3,7 @@
 export function analyzeImage(canvas, {
   alphaThreshold = 10,
   tolerance = 40,          // 0..100 UI slider -> mapped to Lab ∆E
-  minAreaPercent = 0.5,    // clusters smaller than this % are dropped
+  minAreaCm2 = 0.5,        // clusters smaller than this area (cm²) are dropped
   rugWidthCm = 0,
   rugHeightCm = 0,
 }) {
@@ -67,6 +67,8 @@ export function analyzeImage(canvas, {
 
   const boxAreaCm2 = Math.max(0, rugWidthCm) * Math.max(0, rugHeightCm);
   const areaPerPixel = pixelsTotal > 0 ? boxAreaCm2 / pixelsTotal : 0;
+  const minArea = Math.max(0, minAreaCm2);
+  const minPixels = areaPerPixel > 0 ? (minArea / areaPerPixel) : 0;
 
   // Build detailed clusters
   const detailed = clusters.map(c => {
@@ -76,10 +78,10 @@ export function analyzeImage(canvas, {
     return { id: c.id, rgb, hex: rgbToHex(rgb[0], rgb[1], rgb[2]), pixelCount: c.count, percentValid: pct, areaCm2 };
   });
 
-  // Filter by min area %
+  // Filter by min area (converted to pixel count); keep all if rug size is unknown
   const kept = [], dropped = [];
   for (const c of detailed) {
-    if (c.percentValid >= minAreaPercent) kept.push(c); else dropped.push(c);
+    if (c.pixelCount >= minPixels) kept.push(c); else dropped.push(c);
   }
   kept.sort((a, b) => b.pixelCount - a.pixelCount);
 
